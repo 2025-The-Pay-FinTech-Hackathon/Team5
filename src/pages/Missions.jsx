@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { getMissionKingBadge } from '../utils/badgeUtils';
+
 import {
   Container,
   Grid,
@@ -103,17 +105,26 @@ function Missions() {
 
   // 미션 완료
   const handleCompleteMission = (mission) => {
-    if (isParent) return;
-    const child = findChildById(user.id);
-    const updated = { ...child };
-    updated.missions = (updated.missions || []).map(m =>
-      m.id === mission.id ? { ...m, status: '완료', progress: 100, completedAt: new Date().toISOString().slice(0, 10) } : m
-    );
-    updated.points = (updated.points || 0) + Number(mission.reward || 0);
-    updateChild(updated);
-    setMissions(updated.missions); // 즉시 갱신
-    setOpenDetailDialog(false);
-  };
+  if (isParent) return;
+  const child = findChildById(user.id);
+  const updated = { ...child };
+  updated.missions = (updated.missions || []).map(m =>
+    m.id === mission.id ? { ...m, status: '완료', progress: 100, completedAt: new Date().toISOString().slice(0, 10) } : m
+  );
+  updated.points = (updated.points || 0) + Number(mission.reward || 0);
+
+  // 🏅 뱃지 계산 추가
+  const badge = getMissionKingBadge(updated.missions);
+  if (!updated.badges) updated.badges = {};
+  if (badge) {
+    updated.badges['미션왕'] = badge;
+  }
+
+  updateChild(updated);
+  setMissions(updated.missions); // 즉시 갱신
+  setOpenDetailDialog(false);
+};
+
 
   // 미션 상세보기
   const handleOpenDetail = (mission) => {
