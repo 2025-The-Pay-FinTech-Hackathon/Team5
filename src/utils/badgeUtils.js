@@ -16,7 +16,7 @@ export function getMissionKingBadge(missions = []) {
   };
 
   const hasCompletedEveryWeekOfMonth = () => {
-    const weeks = [0, 1, 2, 3]; // 최근 4주
+    const weeks = [0, 1, 2, 3];
     return weeks.every(weekOffset => {
       const startOfWeek = new Date(now);
       startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() - weekOffset * 7);
@@ -43,20 +43,21 @@ export function getMissionKingBadge(missions = []) {
   return null;
 }
 
-/** ✅ 모든 뱃지 점검 및 반영 */
+/** ✅ 모든 뱃지 점검 및 반영 함수 */
 export function checkAndUpdateBadges(child) {
   if (!child) return;
 
   const updated = { ...child };
   const newBadges = { ...updated.badges };
-
   const ledgers = child.ledgers || [];
+
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
   const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
   const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
+  // ✅ 1. 절약왕
   let lastMonthSpend = 0;
   let thisMonthSpend = 0;
 
@@ -77,6 +78,7 @@ export function checkAndUpdateBadges(child) {
     else if (reduction >= 10) newBadges.saver = 'bronze';
   }
 
+  // ✅ 2. 기록왕
   const dates = new Set(ledgers.map(l => l.date));
   let streak = 0;
   let current = new Date();
@@ -91,10 +93,21 @@ export function checkAndUpdateBadges(child) {
   else if (streak >= 15) newBadges.logger = 'silver';
   else if (streak >= 7) newBadges.logger = 'bronze';
 
-  // ✅ 미션왕
+  // ✅ 3. 미션왕
   const missionBadge = getMissionKingBadge(child.missions || []);
   if (missionBadge) newBadges.missioner = missionBadge;
 
+  // ✅ 4. 저축왕
+  const savings = child.savings || [];
+  const bronzeAchieved = savings.some(s => s.currentAmount >= s.targetAmount * 0.5);
+  const silverAchieved = savings.some(s => s.currentAmount >= s.targetAmount);
+  const goldCount = savings.filter(s => s.currentAmount >= s.targetAmount).length;
+
+  if (goldCount >= 3) newBadges.saverPlus = 'gold';
+  else if (silverAchieved) newBadges.saverPlus = 'silver';
+  else if (bronzeAchieved) newBadges.saverPlus = 'bronze';
+
+  // 🔄 뱃지 저장
   updated.badges = newBadges;
   updateChild(updated);
 }
