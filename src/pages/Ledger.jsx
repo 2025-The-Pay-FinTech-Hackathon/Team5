@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { checkAndUpdateBadges } from '../utils/badgeUtils';
+import { Route } from 'react-router-dom';
+
 import {
   Container,
   Paper,
@@ -98,6 +101,8 @@ function Ledger() {
     setOpenDialog(false);
     setForm({ amount: '', memo: '', category: '', date: '' });
     setEditIdx(-1);
+
+    checkAndUpdateBadges(updated);
   };
 
   // 삭제
@@ -239,5 +244,8 @@ function Ledger() {
     </Container>
   );
 }
+
+
+
 
 export default Ledger; 

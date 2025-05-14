@@ -5,6 +5,7 @@ import { useState } from 'react';
 // Components
 import Navigation from './components/Navigation';
 
+
 // Pages
 import Login from './pages/Login';
 import ParentDashboard from './pages/ParentDashboard';
@@ -17,6 +18,9 @@ import Signup from './pages/Signup';
 import MyPage from './pages/MyPage';
 import Ledger from './pages/Ledger';
 import Wishlist from './pages/Wishlist';
+import BadgePage from './pages/BadgePage';
+
+
 
 // Modern pastel theme
 const theme = createTheme({
@@ -296,6 +300,22 @@ function App() {
               )
             }
           />
+          import BadgePage from './pages/BadgePage'; // 상단에 추가
+
+<Route
+  path="/badges"
+  element={
+    user ? (
+      <>
+        <Navigation user={user} onLogout={handleLogout} />
+        <BadgePage />
+      </>
+    ) : (
+      <Navigate to="/" replace />
+    )
+  }
+/>
+
           <Route
             path="/wishlist"
             element={
