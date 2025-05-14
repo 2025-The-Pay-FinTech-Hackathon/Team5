@@ -20,6 +20,8 @@ import Ledger from './pages/Ledger';
 import Wishlist from './pages/Wishlist';
 import BadgePage from './pages/BadgePage';
 import MemoryGame from './pages/MemoryGame';
+import ParentReportPage from './pages/ParentReportPage';
+
 
 
 // Modern pastel theme
@@ -300,7 +302,7 @@ function App() {
               )
             }
           />
-          import BadgePage from './pages/BadgePage'; // 상단에 추가
+      
 
 <Route
   path="/badges"
@@ -317,7 +319,7 @@ function App() {
 />
 
 <Route path="/memory-game" element={<MemoryGame />} />
-
+<Route path="/parent/report" element={<ParentReportPage />} />
 
           <Route
             path="/wishlist"
