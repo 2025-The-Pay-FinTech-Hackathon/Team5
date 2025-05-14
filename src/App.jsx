@@ -19,7 +19,7 @@ import MyPage from './pages/MyPage';
 import Ledger from './pages/Ledger';
 import Wishlist from './pages/Wishlist';
 import BadgePage from './pages/BadgePage';
-
+import MemoryGame from './pages/MemoryGame';
 
 
 // Modern pastel theme
@@ -315,6 +315,9 @@ function App() {
     )
   }
 />
+
+<Route path="/memory-game" element={<MemoryGame />} />
+
 
           <Route
             path="/wishlist"
