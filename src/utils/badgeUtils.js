@@ -2,6 +2,7 @@
 
 import { updateChild } from './localData';
 
+
 export function checkAndUpdateBadges(child) {
   if (!child) return;
 
@@ -39,18 +40,22 @@ export function checkAndUpdateBadges(child) {
   }
 
   // 기록왕 연속 작성일 수 계산
-const dates = new Set((child.ledgers || []).map(l => l.date)); // YYYY-MM-DD 형식
-let streak = 0;
-let current = new Date(); // 오늘 날짜 기준
-
-while (dates.has(current.toISOString().slice(0, 10))) {
-  streak++;
-  current.setDate(current.getDate() - 1);
-}
-
-if (streak >= 30) newBadges.logger = 'gold';
-else if (streak >= 15) newBadges.logger = 'silver';
-else if (streak >= 7) newBadges.logger = 'bronze';
+  const dates = new Set((child.ledgers || []).map(l => l.date)); // 'YYYY-MM-DD'
+  let streak = 0;
+  
+  // 현재 날짜를 YYYY-MM-DD 형태로 설정 (시간 정보 제거)
+  let current = new Date();
+  current.setHours(0, 0, 0, 0); // <- 시간을 완전히 00:00으로 설정
+  
+  while (dates.has(current.toISOString().slice(0, 10))) {
+    streak++;
+    current.setDate(current.getDate() - 1); // 하루 전으로 이동
+  }
+  
+  if (streak >= 30) newBadges.logger = 'gold';
+  else if (streak >= 15) newBadges.logger = 'silver';
+  else if (streak >= 7) newBadges.logger = 'bronze';
+  
 
   // (여기에 나중에 퀴즈, 미션, 저축 등도 추가 가능)
 

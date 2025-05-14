@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { checkAndUpdateBadges } from '../utils/badgeUtils';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { checkAndUpdateBadges } from '../utils/badgeUtils';
 
