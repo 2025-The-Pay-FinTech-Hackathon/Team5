@@ -1,21 +1,59 @@
-// src/utils/badgeUtils.js
-
 import { updateChild } from './localData';
 
+/** ✅ 미션왕 뱃지 계산 함수 */
+export function getMissionKingBadge(missions = []) {
+  const now = new Date();
 
+  const isThisWeek = (dateString) => {
+    const date = new Date(dateString);
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    return date >= startOfWeek && date <= endOfWeek;
+  };
+
+  const hasCompletedEveryWeekOfMonth = () => {
+    const weeks = [0, 1, 2, 3]; // 최근 4주
+    return weeks.every(weekOffset => {
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() - weekOffset * 7);
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      return missions.some(m => {
+        if (m.status !== '완료') return false;
+        const d = new Date(m.completedAt);
+        return d >= startOfWeek && d <= endOfWeek;
+      });
+    });
+  };
+
+  const thisWeekCompleted = missions.filter(m =>
+    m.status === '완료' && isThisWeek(m.completedAt)
+  );
+
+  if (hasCompletedEveryWeekOfMonth()) return 'gold';
+  if (thisWeekCompleted.length >= 5) return 'silver';
+  if (thisWeekCompleted.length >= 3) return 'bronze';
+  return null;
+}
+
+/** ✅ 모든 뱃지 점검 및 반영 */
 export function checkAndUpdateBadges(child) {
   if (!child) return;
 
   const updated = { ...child };
   const newBadges = { ...updated.badges };
 
-  // 절약왕 계산 예시 (이전 달 지출과 비교 필요)
   const ledgers = child.ledgers || [];
-
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
-
   const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
   const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
@@ -39,25 +77,23 @@ export function checkAndUpdateBadges(child) {
     else if (reduction >= 10) newBadges.saver = 'bronze';
   }
 
-  // 기록왕 연속 작성일 수 계산
-  const dates = new Set((child.ledgers || []).map(l => l.date)); // 'YYYY-MM-DD'
+  const dates = new Set(ledgers.map(l => l.date));
   let streak = 0;
-  
-  // 현재 날짜를 YYYY-MM-DD 형태로 설정 (시간 정보 제거)
   let current = new Date();
-  current.setHours(0, 0, 0, 0); // <- 시간을 완전히 00:00으로 설정
-  
+  current.setHours(0, 0, 0, 0);
+
   while (dates.has(current.toISOString().slice(0, 10))) {
     streak++;
-    current.setDate(current.getDate() - 1); // 하루 전으로 이동
+    current.setDate(current.getDate() - 1);
   }
-  
+
   if (streak >= 30) newBadges.logger = 'gold';
   else if (streak >= 15) newBadges.logger = 'silver';
   else if (streak >= 7) newBadges.logger = 'bronze';
-  
 
-  // (여기에 나중에 퀴즈, 미션, 저축 등도 추가 가능)
+  // ✅ 미션왕
+  const missionBadge = getMissionKingBadge(child.missions || []);
+  if (missionBadge) newBadges.missioner = missionBadge;
 
   updated.badges = newBadges;
   updateChild(updated);
