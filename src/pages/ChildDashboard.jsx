@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { checkAndUpdateBadges } from '../utils/badgeUtils';
+
 import {
   Container,
   Grid,
@@ -51,6 +53,12 @@ function ChildDashboard() {
       setChild(findChildById(user.id));
     }
   }, [user, location.pathname]);
+
+  useEffect(() => {
+    if (child) {
+      checkAndUpdateBadges(child);
+    }
+  }, [child]);
 
   // 최근 활동(미션, 퀴즈 등)
   const recentActivities = [
