@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { findChildById, updateChild } from '../utils/localData';
+import { checkAndUpdateBadges } from '../utils/badgeUtils';
+
 import {
   Container,
   Paper,
@@ -13,12 +16,11 @@ import {
   CardContent,
   LinearProgress,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
-import { CheckCircle as CheckCircleIcon, Cancel as CancelIcon } from '@mui/icons-material';
+import {
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+} from '@mui/icons-material';
 
 function Quiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -27,30 +29,23 @@ function Quiz() {
   const [score, setScore] = useState(0);
   const [quizCompleted, setQuizCompleted] = useState(false);
 
+  const user = JSON.parse(sessionStorage.getItem('user'));
+  const [child, setChild] = useState(user?.role === 'child' ? findChildById(user.id) : null);
+
   const questions = [
     {
       question: '저축이란 무엇인가요?',
-      options: [
-        '돈을 쓰는 것',
-        '돈을 모으는 것',
-        '돈을 빌리는 것',
-        '돈을 잃는 것',
-      ],
+      options: ['돈을 쓰는 것', '돈을 모으는 것', '돈을 빌리는 것', '돈을 잃는 것'],
       correctAnswer: '돈을 모으는 것',
       explanation: '저축은 미래를 위해 돈을 모으는 행동입니다. 필요할 때 사용할 수 있도록 돈을 보관하는 것이죠.',
     },
     {
       question: '이자란 무엇인가요?',
-      options: [
-        '빌린 돈을 갚는 것',
-        '돈을 빌려주고 받는 보상',
-        '돈을 잃는 것',
-        '돈을 쓰는 것',
-      ],
+      options: ['빌린 돈을 갚는 것', '돈을 빌려주고 받는 보상', '돈을 잃는 것', '돈을 쓰는 것'],
       correctAnswer: '돈을 빌려주고 받는 보상',
       explanation: '이자는 돈을 빌려주고 받는 보상입니다. 은행에 돈을 맡기면 이자를 받고, 돈을 빌리면 이자를 내야 해요.',
     },
-    // Add more questions here
+    // 더 많은 문제 추가 가능
   ];
 
   const handleAnswerSelect = (event) => {
@@ -58,9 +53,28 @@ function Quiz() {
   };
 
   const handleSubmit = () => {
-    if (selectedAnswer === questions[currentQuestion].correctAnswer) {
+    const isCorrect = selectedAnswer === questions[currentQuestion].correctAnswer;
+
+    if (isCorrect) {
       setScore(score + 1);
     }
+
+    // 정답 기록 저장
+    if (child) {
+      const updated = { ...child };
+      updated.quizzes = [
+        ...(child.quizzes || []),
+        {
+          id: Date.now(),
+          isCorrect,
+          answeredAt: new Date().toISOString().slice(0, 10),
+        },
+      ];
+      updateChild(updated);
+      setChild(updated);
+      checkAndUpdateBadges(updated);
+    }
+
     setShowExplanation(true);
   };
 
@@ -129,10 +143,7 @@ function Quiz() {
               {questions[currentQuestion].question}
             </Typography>
             <FormControl component="fieldset">
-              <RadioGroup
-                value={selectedAnswer}
-                onChange={handleAnswerSelect}
-              >
+              <RadioGroup value={selectedAnswer} onChange={handleAnswerSelect}>
                 {questions[currentQuestion].options.map((option, index) => (
                   <FormControlLabel
                     key={index}
@@ -159,9 +170,7 @@ function Quiz() {
                 <CancelIcon sx={{ mr: 1 }} />
               )}
               <Typography>
-                {selectedAnswer === questions[currentQuestion].correctAnswer
-                  ? '정답입니다!'
-                  : '틀렸습니다.'}
+                {selectedAnswer === questions[currentQuestion].correctAnswer ? '정답입니다!' : '틀렸습니다.'}
               </Typography>
             </Box>
             <Typography variant="body2" sx={{ mt: 1 }}>
@@ -181,11 +190,7 @@ function Quiz() {
               제출하기
             </Button>
           ) : (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleNext}
-            >
+            <Button variant="contained" color="primary" onClick={handleNext}>
               다음 문제
             </Button>
           )}
@@ -195,4 +200,4 @@ function Quiz() {
   );
 }
 
-export default Quiz; 
+export default Quiz;

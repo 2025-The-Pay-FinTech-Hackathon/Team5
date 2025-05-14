@@ -49,24 +49,24 @@ export function checkAndUpdateBadges(child) {
 
   const updated = { ...child };
   const newBadges = { ...updated.badges };
-  const ledgers = child.ledgers || [];
 
   const now = new Date();
+
+  // ✅ 1. 절약왕
+  const ledgers = updated.ledgers || [];
+  let lastMonthSpend = 0;
+  let thisMonthSpend = 0;
+
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
   const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
   const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
-  // ✅ 1. 절약왕
-  let lastMonthSpend = 0;
-  let thisMonthSpend = 0;
-
   ledgers.forEach(entry => {
-    const entryDate = new Date(entry.date);
-    if (entryDate.getFullYear() === lastMonthYear && entryDate.getMonth() === lastMonth) {
+    const date = new Date(entry.date);
+    if (date.getFullYear() === lastMonthYear && date.getMonth() === lastMonth) {
       lastMonthSpend += entry.amount;
-    }
-    if (entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonth) {
+    } else if (date.getFullYear() === currentYear && date.getMonth() === currentMonth) {
       thisMonthSpend += entry.amount;
     }
   });
@@ -79,12 +79,12 @@ export function checkAndUpdateBadges(child) {
   }
 
   // ✅ 2. 기록왕
-  const dates = new Set(ledgers.map(l => l.date));
+  const ledgerDates = new Set(ledgers.map(l => l.date));
   let streak = 0;
-  let current = new Date();
+  const current = new Date();
   current.setHours(0, 0, 0, 0);
 
-  while (dates.has(current.toISOString().slice(0, 10))) {
+  while (ledgerDates.has(current.toISOString().slice(0, 10))) {
     streak++;
     current.setDate(current.getDate() - 1);
   }
@@ -94,20 +94,37 @@ export function checkAndUpdateBadges(child) {
   else if (streak >= 7) newBadges.logger = 'bronze';
 
   // ✅ 3. 미션왕
-  const missionBadge = getMissionKingBadge(child.missions || []);
+  const missionBadge = getMissionKingBadge(updated.missions || []);
   if (missionBadge) newBadges.missioner = missionBadge;
 
   // ✅ 4. 저축왕
-  const savings = child.savings || [];
-  const bronzeAchieved = savings.some(s => s.currentAmount >= s.targetAmount * 0.5);
-  const silverAchieved = savings.some(s => s.currentAmount >= s.targetAmount);
-  const goldCount = savings.filter(s => s.currentAmount >= s.targetAmount).length;
+  const savings = updated.savings || [];
+  const bronze = savings.some(s => s.currentAmount >= s.targetAmount * 0.5);
+  const silver = savings.some(s => s.currentAmount >= s.targetAmount);
+  const gold = savings.filter(s => s.currentAmount >= s.targetAmount).length >= 3;
 
-  if (goldCount >= 3) newBadges.saverPlus = 'gold';
-  else if (silverAchieved) newBadges.saverPlus = 'silver';
-  else if (bronzeAchieved) newBadges.saverPlus = 'bronze';
+  if (gold) newBadges.saverPlus = 'gold';
+  else if (silver) newBadges.saverPlus = 'silver';
+  else if (bronze) newBadges.saverPlus = 'bronze';
 
-  // 🔄 뱃지 저장
+  // ✅ 5. 퀴즈박사
+  const quizzes = updated.quizzes || [];
+  const totalCorrect = quizzes.filter(q => q.isCorrect).length;
+
+  let quizStreak = 0;
+  for (let i = quizzes.length - 1; i >= 0; i--) {
+    if (quizzes[i].isCorrect) {
+      quizStreak++;
+    } else {
+      break;
+    }
+  }
+
+  if (totalCorrect >= 20 && quizStreak >= 5) newBadges.quizMaster = 'gold';
+  else if (totalCorrect >= 10) newBadges.quizMaster = 'silver';
+  else if (totalCorrect >= 5) newBadges.quizMaster = 'bronze';
+
+  // 🔄 저장
   updated.badges = newBadges;
   updateChild(updated);
 }
