@@ -240,11 +240,11 @@ function ParentDashboard() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4, minHeight: '80vh' }}>
-      <Grid container spacing={3} alignItems="flex-start">
+    <Container maxWidth="lg" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '70vh' }}>
+      <Grid container spacing={1} alignItems="flex-start">
         {/* Header */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Paper sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: 1, boxShadow: 1 }}>
             <Typography variant="h4" component="h1">
               부모 대시보드
             </Typography>
@@ -254,8 +254,8 @@ function ParentDashboard() {
           </Paper>
         </Grid>
         {/* Quick Actions */}
-        <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Paper sx={{ p: 2, flexGrow: 1, minHeight: 320, display: 'flex', flexDirection: 'column' }}>
+        <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Paper sx={{ p: 1, flexGrow: 1, minHeight: 120, display: 'flex', flexDirection: 'column', borderRadius: 1, boxShadow: 1 }}>
             <Typography variant="h6" gutterBottom>
               빠른 기능
             </Typography>
@@ -264,15 +264,15 @@ function ParentDashboard() {
                 <AccountBalanceIcon sx={{ mr: 2 }} />
                 <ListItemText primary="용돈 보내기" />
               </ListItem>
-              <ListItem button onClick={() => navigate('/parent/missions')}>
+              <ListItem button onClick={() => window.location.href = '/parent/missions'}>
                 <SchoolIcon sx={{ mr: 2 }} />
                 <ListItemText primary="미션 생성" />
               </ListItem>
-              <ListItem button onClick={() => navigate('/parent/quiz')}>
+              <ListItem button onClick={() => window.location.href = '/parent/quiz'}>
                 <AssignmentIcon sx={{ mr: 2 }} />
                 <ListItemText primary="퀴즈 관리" />
               </ListItem>
-              <ListItem button onClick={() => navigate('/parent/report')}>
+              <ListItem button onClick={() => window.location.href = '/parent/report'}>
                 <TrendingUpIcon sx={{ mr: 2 }} />
                 <ListItemText primary="성과 보고서" />
               </ListItem>
@@ -280,17 +280,17 @@ function ParentDashboard() {
           </Paper>
         </Grid>
         {/* Children Overview */}
-        <Grid item xs={12} md={8} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Paper sx={{ p: 2, flexGrow: 1, minHeight: 320, display: 'flex', flexDirection: 'column' }}>
+        <Grid item xs={12} md={8} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Paper sx={{ p: 1, flexGrow: 1, minHeight: 120, display: 'flex', flexDirection: 'column', borderRadius: 1, boxShadow: 1 }}>
             <Typography variant="h6" gutterBottom>
               자녀 현황
             </Typography>
-            <Grid container spacing={2} alignItems="stretch">
+            <Grid container spacing={1} alignItems="stretch">
               {children.map((child) => {
                 const stats = getChildStats(child);
                 return (
                   <Grid item xs={12} sm={6} key={child.id} sx={{ display: 'flex' }}>
-                    <Card sx={{ boxShadow: 2, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 220 }}>
+                    <Card sx={{ boxShadow: 2, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 120 }}>
                       <CardContent>
                         <Typography variant="h6">{child.name}</Typography>
                         <Typography color="text.secondary">
@@ -300,7 +300,7 @@ function ParentDashboard() {
                           신용점수: {child.creditScore}
                         </Typography>
                         {/* 통계 카드 */}
-                        <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                           <Chip icon={<StarIcon />} label={`획득: ${stats.totalPointsEarned}점`} color="primary" size="small" />
                           <Chip icon={<SavingsIcon />} label={`저축: ${stats.savingsProgress}%`} color="success" size="small" />
                           <Chip icon={<CheckCircleIcon />} label={`미션: ${stats.missionCompletionRate}%`} color="info" size="small" />
@@ -321,8 +321,8 @@ function ParentDashboard() {
           </Paper>
         </Grid>
         {/* Recent Transactions */}
-        <Grid item xs={12} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Paper sx={{ p: 2, flexGrow: 1, minHeight: 220, display: 'flex', flexDirection: 'column' }}>
+        <Grid item xs={12} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Paper sx={{ p: 1, flexGrow: 1, minHeight: 80, display: 'flex', flexDirection: 'column', borderRadius: 1, boxShadow: 1 }}>
             <Typography variant="h6" gutterBottom>
               최근 거래 내역
             </Typography>
@@ -339,7 +339,7 @@ function ParentDashboard() {
                 </Box>
               ))}
             </List>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
               <Button onClick={() => setLedgerPage(ledgerPage - 1)} disabled={ledgerPage === 0} sx={{ mr: 1 }}>이전</Button>
               <Button onClick={() => setLedgerPage(ledgerPage + 1)} disabled={(ledgerPage + 1) * ledgersPerPage >= allLedgers.length}>다음</Button>
             </Box>
@@ -347,8 +347,8 @@ function ParentDashboard() {
         </Grid>
         {/* 대출 요청 관리 */}
         {loanRequests.length > 0 && (
-          <Grid item xs={12} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Paper sx={{ p: 2, flexGrow: 1, minHeight: 120, display: 'flex', flexDirection: 'column', mb: 2 }}>
+          <Grid item xs={12} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Paper sx={{ p: 1, flexGrow: 1, minHeight: 60, display: 'flex', flexDirection: 'column', mb: 1, borderRadius: 1, boxShadow: 1 }}>
               <Typography variant="h6" gutterBottom>
                 대출 요청 관리
               </Typography>

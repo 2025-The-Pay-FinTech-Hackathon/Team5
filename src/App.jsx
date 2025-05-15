@@ -4,7 +4,13 @@ import { useState } from 'react';
 
 // Components
 import Navigation from './components/Navigation';
-
+import LoadingSpinner from './components/common/LoadingSpinner';
+import ErrorMessage from './components/common/ErrorMessage';
+import NotificationCenter from './components/notifications/NotificationCenter';
+import MessageCenter from './components/messages/MessageCenter';
+import FinancialEducation from './components/education/FinancialEducation';
+import PerformanceAnalytics from './components/analytics/PerformanceAnalytics';
+import SocialFeatures from './components/social/SocialFeatures';
 
 // Pages
 import Login from './pages/Login';
@@ -21,8 +27,6 @@ import Wishlist from './pages/Wishlist';
 import BadgePage from './pages/BadgePage';
 import MemoryGame from './pages/MemoryGame';
 import ParentReportPage from './pages/ParentReportPage';
-
-
 
 // Modern pastel theme
 const theme = createTheme({
@@ -128,10 +132,22 @@ const theme = createTheme({
 
 function App() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleLogin = (userData) => {
-    setUser(userData);
-    sessionStorage.setItem('user', JSON.stringify(userData));
+  const handleLogin = async (userData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setUser(userData);
+      sessionStorage.setItem('user', JSON.stringify(userData));
+    } catch (err) {
+      setError('로그인 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -147,6 +163,10 @@ function App() {
     }
   }, []);
 
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -155,6 +175,7 @@ function App() {
         '.MuiPaper-root': { background: '#fff' },
       }} />
       <Router>
+        {error && <ErrorMessage title="오류" message={error} />}
         <Routes>
           <Route 
             path="/" 
@@ -177,7 +198,127 @@ function App() {
               user?.role === 'parent' ? (
                 <>
                   <Navigation user={user} onLogout={handleLogout} />
+                  <NotificationCenter />
                   <ParentDashboard />
+                </>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/parent/messages"
+            element={
+              user?.role === 'parent' ? (
+                <>
+                  <Navigation user={user} onLogout={handleLogout} />
+                  <MessageCenter />
+                </>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/parent/education"
+            element={
+              user?.role === 'parent' ? (
+                <>
+                  <Navigation user={user} onLogout={handleLogout} />
+                  <FinancialEducation />
+                </>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/parent/analytics"
+            element={
+              user?.role === 'parent' ? (
+                <>
+                  <Navigation user={user} onLogout={handleLogout} />
+                  <PerformanceAnalytics />
+                </>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/parent/social"
+            element={
+              user?.role === 'parent' ? (
+                <>
+                  <Navigation user={user} onLogout={handleLogout} />
+                  <SocialFeatures />
+                </>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          {/* Child Routes */}
+          <Route
+            path="/child"
+            element={
+              user?.role === 'child' ? (
+                <>
+                  <Navigation user={user} onLogout={handleLogout} />
+                  <NotificationCenter />
+                  <ChildDashboard />
+                </>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/child/messages"
+            element={
+              user?.role === 'child' ? (
+                <>
+                  <Navigation user={user} onLogout={handleLogout} />
+                  <MessageCenter />
+                </>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/child/education"
+            element={
+              user?.role === 'child' ? (
+                <>
+                  <Navigation user={user} onLogout={handleLogout} />
+                  <FinancialEducation />
+                </>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/child/analytics"
+            element={
+              user?.role === 'child' ? (
+                <>
+                  <Navigation user={user} onLogout={handleLogout} />
+                  <PerformanceAnalytics />
+                </>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/child/social"
+            element={
+              user?.role === 'child' ? (
+                <>
+                  <Navigation user={user} onLogout={handleLogout} />
+                  <SocialFeatures />
                 </>
               ) : (
                 <Navigate to="/" replace />
@@ -204,20 +345,6 @@ function App() {
                 <>
                   <Navigation user={user} onLogout={handleLogout} />
                   <Savings />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          {/* Child Routes */}
-          <Route
-            path="/child"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <ChildDashboard />
                 </>
               ) : (
                 <Navigate to="/" replace />
@@ -302,25 +429,21 @@ function App() {
               )
             }
           />
-      
-
-<Route
-  path="/badges"
-  element={
-    user ? (
-      <>
-        <Navigation user={user} onLogout={handleLogout} />
-        <BadgePage />
-      </>
-    ) : (
-      <Navigate to="/" replace />
-    )
-  }
-/>
-
-<Route path="/memory-game" element={<MemoryGame />} />
-<Route path="/parent/report" element={<ParentReportPage />} />
-
+          <Route
+            path="/badges"
+            element={
+              user ? (
+                <>
+                  <Navigation user={user} onLogout={handleLogout} />
+                  <BadgePage />
+                </>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route path="/memory-game" element={<MemoryGame />} />
+          <Route path="/parent/report" element={<ParentReportPage />} />
           <Route
             path="/wishlist"
             element={

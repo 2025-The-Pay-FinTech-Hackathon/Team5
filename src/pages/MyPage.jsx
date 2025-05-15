@@ -1,109 +1,214 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
-  Paper,
+  Grid,
   Typography,
-  TextField,
-  Button,
   Box,
-  Alert,
+  Card,
+  CardContent,
+  Button,
+  Avatar,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Divider,
+  IconButton,
+  Chip,
 } from '@mui/material';
-import { getUsers, saveUsers } from '../utils/localData';
-import { useLocation } from 'react-router-dom';
+import {
+  AccountCircle,
+  Settings,
+  History,
+  Notifications,
+  Help,
+  Logout,
+  EmojiEvents as BadgeIcon,
+} from '@mui/icons-material';
+import ProfileCustomization from '../components/profile/ProfileCustomization';
+import BadgeDetails from '../components/badges/BadgeDetails';
+import ActivityHistory from '../components/activity/ActivityHistory';
 
-function MyPage({ user, onUserUpdate }) {
-  const location = useLocation();
-  const [form, setForm] = useState({
-    name: user?.name || '',
-    password: '',
-    confirmPassword: '',
+const MyPage = () => {
+  const [user, setUser] = useState({
+    name: '홍길동',
+    email: 'hong@example.com',
+    profile: {
+      selectedBadges: [1, 3],
+      color: '#6C63FF',
+      frame: 'default',
+    },
   });
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  const [badgeDetailsOpen, setBadgeDetailsOpen] = useState(false);
+  const [userProgress, setUserProgress] = useState({
+    1: 1, // 첫 저축 완료
+    2: 7, // 10개 미션 중 7개 완료
+    3: 85, // 퀴즈 85점
+    4: 750000, // 75만원 저축
+    5: 15, // 15일 연속 저축
+  });
+
+  const [activities, setActivities] = useState([
+    {
+      id: 1,
+      type: 'saving',
+      title: '첫 저축 목표 달성',
+      date: '2024년 3월 15일',
+    },
+    {
+      id: 2,
+      type: 'quiz',
+      title: '퀴즈 완료',
+      date: '2024년 3월 14일',
+    },
+    {
+      id: 3,
+      type: 'goal',
+      title: '새로운 목표 설정',
+      date: '2024년 3월 13일',
+    },
+    {
+      id: 4,
+      type: 'badge',
+      title: '첫 저축 뱃지 획득',
+      date: '2024년 3월 15일',
+    },
+    {
+      id: 5,
+      type: 'mission',
+      title: '일일 미션 완료',
+      date: '2024년 3월 14일',
+    },
+  ]);
+
+  const handleProfileUpdate = (updatedUser) => {
+    setUser(updatedUser);
+    // TODO: API 호출하여 서버에 업데이트
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    if (!form.name) {
-      setError('이름을 입력해주세요.');
-      return;
-    }
-    if (form.password && form.password !== form.confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.');
-      return;
-    }
-    // Update user in localStorage
-    const users = getUsers();
-    const idx = users.findIndex(u => u.id === user.id);
-    if (idx === -1) {
-      setError('사용자 정보를 찾을 수 없습니다.');
-      return;
-    }
-    users[idx].name = form.name;
-    if (form.password) users[idx].password = form.password;
-    saveUsers(users);
-    setSuccess('개인정보가 성공적으로 변경되었습니다.');
-    onUserUpdate && onUserUpdate({ ...user, name: form.name, password: form.password || user.password });
-  };
+  const menuItems = [
+    { icon: <AccountCircle />, text: '계정 정보', path: '/mypage/account' },
+    { icon: <Settings />, text: '설정', path: '/mypage/settings' },
+    { icon: <History />, text: '활동 내역', path: '/mypage/history' },
+    { icon: <Notifications />, text: '알림 설정', path: '/mypage/notifications' },
+    { icon: <Help />, text: '고객 지원', path: '/mypage/support' },
+  ];
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" component="h1" align="center" gutterBottom>
-          마이페이지
-        </Typography>
-        <Typography variant="subtitle1" align="center" color="text.secondary" gutterBottom>
-          개인정보 변경
-        </Typography>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="이름"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            label="새 비밀번호"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="비밀번호 확인"
-            name="confirmPassword"
-            type="password"
-            value={form.confirmPassword}
-            onChange={handleChange}
-            margin="normal"
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            sx={{ mt: 3 }}
-          >
-            저장
-          </Button>
-        </form>
-      </Paper>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <ProfileCustomization user={user} onUpdate={handleProfileUpdate} />
+          
+          <Card sx={{ mt: 3 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">뱃지 컬렉션</Typography>
+                <IconButton onClick={() => setBadgeDetailsOpen(true)}>
+                  <BadgeIcon />
+                </IconButton>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {user.profile.selectedBadges.map(badgeId => (
+                  <Chip
+                    key={badgeId}
+                    label={`뱃지 #${badgeId}`}
+                    color="primary"
+                    variant="outlined"
+                  />
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ mt: 3 }}>
+            <CardContent>
+              <List>
+                {menuItems.map((item, index) => (
+                  <React.Fragment key={item.text}>
+                    <ListItem button>
+                      <ListItemIcon>{item.icon}</ListItemIcon>
+                      <ListItemText primary={item.text} />
+                    </ListItem>
+                    {index < menuItems.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+                <Divider />
+                <ListItem button>
+                  <ListItemIcon>
+                    <Logout />
+                  </ListItemIcon>
+                  <ListItemText primary="로그아웃" />
+                </ListItem>
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent>
+              <Typography variant="h5" gutterBottom>
+                활동 요약
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ textAlign: 'center', p: 2 }}>
+                    <Typography variant="h4" color="primary">
+                      5
+                    </Typography>
+                    <Typography variant="body1">달성한 목표</Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ textAlign: 'center', p: 2 }}>
+                    <Typography variant="h4" color="primary">
+                      3
+                    </Typography>
+                    <Typography variant="body1">획득한 뱃지</Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ textAlign: 'center', p: 2 }}>
+                    <Typography variant="h4" color="primary">
+                      85%
+                    </Typography>
+                    <Typography variant="body1">목표 달성률</Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ textAlign: 'center', p: 2 }}>
+                    <Typography variant="h4" color="primary">
+                      12
+                    </Typography>
+                    <Typography variant="body1">연속 저축일</Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+
+          <Box sx={{ mt: 3 }}>
+            <ActivityHistory activities={activities} />
+          </Box>
+        </Grid>
+      </Grid>
+
+      <BadgeDetails
+        open={badgeDetailsOpen}
+        onClose={() => setBadgeDetailsOpen(false)}
+        badges={[
+          { id: 1, name: '첫 저축', icon: '💰', description: '첫 저축 목표 달성', requirement: 1, tips: '첫 저축 목표를 설정하고 달성해보세요!' },
+          { id: 2, name: '미션 마스터', icon: '🎯', description: '10개의 미션 완료', requirement: 10, tips: '일일 미션을 꾸준히 완료해보세요.' },
+          { id: 3, name: '퀴즈 전문가', icon: '📚', description: '퀴즈 100점 달성', requirement: 100, tips: '퀴즈를 통해 금융 지식을 쌓아보세요.' },
+          { id: 4, name: '저축왕', icon: '👑', description: '100만원 저축 달성', requirement: 1000000, tips: '목표 금액을 조금씩 늘려가며 도전해보세요.' },
+          { id: 5, name: '습관 형성', icon: '📅', description: '30일 연속 저축', requirement: 30, tips: '매일 조금씩이라도 꾸준히 저축하는 습관을 만들어보세요.' },
+        ]}
+        userProgress={userProgress}
+      />
     </Container>
   );
-}
+};
 
 export default MyPage; 

@@ -115,12 +115,12 @@ function Savings() {
   // 부모: 자녀별 저축 목표 보기
   if (isParent) {
     return (
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4, minHeight: '80vh' }}>
-        <Paper sx={{ p: 2, mb: 3, display: 'flex', alignItems: 'center', boxShadow: 2 }}>
+      <Container maxWidth="lg" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '70vh' }}>
+        <Paper sx={{ p: 1, mb: 1, display: 'flex', alignItems: 'center', boxShadow: 1, borderRadius: 1 }}>
           <SavingsIcon sx={{ mr: 1, fontSize: 32 }} />
           <Typography variant="h4" component="h1">자녀 저축 목표</Typography>
         </Paper>
-        <Grid container spacing={3} alignItems="flex-start">
+        <Grid container spacing={1} alignItems="flex-start">
           {children.length === 0 && (
             <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 220 }}>
               <Typography color="text.secondary" sx={{ p: 4, width: '100%', textAlign: 'center' }}>자녀가 없습니다.</Typography>
@@ -128,10 +128,10 @@ function Savings() {
           )}
           {children.map(child => (
             <Grid item xs={12} md={6} key={child.id} sx={{ display: 'flex' }}>
-              <Paper sx={{ p: 2, boxShadow: 1, flexGrow: 1, minHeight: 320, display: 'flex', flexDirection: 'column' }}>
+              <Paper sx={{ p: 1, boxShadow: 1, flexGrow: 1, minHeight: 80, display: 'flex', flexDirection: 'column', borderRadius: 1 }}>
                 <Typography variant="h6">{child.name}</Typography>
                 {(child.savings && child.savings.length > 0) ? child.savings.map(goal => (
-                  <Card key={goal.id} sx={{ my: 2, boxShadow: 1 }}>
+                  <Card key={goal.id} sx={{ my: 1, boxShadow: 1, borderRadius: 1 }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <Typography variant="subtitle1">{goal.title}</Typography>
@@ -156,18 +156,18 @@ function Savings() {
 
   // 자녀: 저축 목표 관리
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4, minHeight: '80vh' }}>
-      <Paper sx={{ p: 2, mb: 3, display: 'flex', alignItems: 'center', boxShadow: 2 }}>
+    <Container maxWidth="lg" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '70vh' }}>
+      <Paper sx={{ p: 1, mb: 1, display: 'flex', alignItems: 'center', boxShadow: 1, borderRadius: 1 }}>
         <SavingsIcon sx={{ mr: 1, fontSize: 32 }} />
         <Typography variant="h4" component="h1">저축 목표</Typography>
         <Button variant="contained" color="primary" startIcon={<AddIcon />} sx={{ ml: 2 }} onClick={() => setOpenDialog(true)}>
           새 목표 만들기
         </Button>
       </Paper>
-      <Grid container spacing={3} alignItems="flex-start">
+      <Grid container spacing={1} alignItems="flex-start">
         {(child?.savings && child.savings.length > 0) ? child.savings.map(goal => (
           <Grid item xs={12} md={6} key={goal.id} sx={{ display: 'flex' }}>
-            <Card sx={{ boxShadow: 2, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 220 }}>
+            <Card sx={{ boxShadow: 1, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 80, borderRadius: 1 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <Typography variant="h6">{goal.title}</Typography>

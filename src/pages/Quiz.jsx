@@ -98,8 +98,8 @@ function Quiz() {
 
   if (quizCompleted) {
     return (
-      <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
+      <Container maxWidth="md" sx={{ pt: '64px', mt: 2 }}>
+        <Paper sx={{ p: 1, textAlign: 'center', borderRadius: 1 }}>
           <Typography variant="h4" gutterBottom>
             퀴즈 완료!
           </Typography>
@@ -121,9 +121,9 @@ function Quiz() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Paper sx={{ p: 4 }}>
-        <Box sx={{ mb: 3 }}>
+    <Container maxWidth="md" sx={{ pt: '64px', mt: 2 }}>
+      <Paper sx={{ p: 1, borderRadius: 1 }}>
+        <Box sx={{ mb: 1 }}>
           <Typography variant="h5" gutterBottom>
             금융 퀴즈
           </Typography>
@@ -137,7 +137,7 @@ function Quiz() {
           </Typography>
         </Box>
 
-        <Card sx={{ mb: 3 }}>
+        <Card sx={{ mb: 1, borderRadius: 1 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               {questions[currentQuestion].question}

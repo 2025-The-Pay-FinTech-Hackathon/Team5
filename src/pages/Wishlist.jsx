@@ -98,8 +98,8 @@ function Wishlist() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4, minHeight: '70vh' }}>
-      <Paper sx={{ p: 3, mb: 3, boxShadow: 2 }}>
+    <Container maxWidth="md" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '60vh' }}>
+      <Paper sx={{ p: 1, mb: 1, boxShadow: 1, borderRadius: 1 }}>
         <Typography variant="h4" gutterBottom>위시리스트</Typography>
         {isParent && (
           <FormControl sx={{ minWidth: 180, mb: 2 }} size="small">
@@ -141,7 +141,7 @@ function Wishlist() {
               <Divider />
             </Box>
           )) : (
-            <Typography color="text.secondary" sx={{ p: 4, textAlign: 'center' }}>위시리스트가 없습니다.</Typography>
+            <Typography color="text.secondary" sx={{ p: 1, textAlign: 'center' }}>위시리스트가 없습니다.</Typography>
           )}
         </List>
       </Paper>

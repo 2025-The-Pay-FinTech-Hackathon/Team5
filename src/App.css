@@ -1,3 +1,21 @@
+html, body, #root, main {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-sizing: border-box;
+  height: 100%;
+}
+.MuiContainer-root, .MuiAppBar-root, .MuiToolbar-root {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+.MuiAppBar-root, .MuiToolbar-root {
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  top: 0 !important;
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;

@@ -148,11 +148,11 @@ function Missions() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4, minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-      <Grid container spacing={3} alignItems="flex-start">
+    <Container maxWidth="lg" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '70vh' }}>
+      <Grid container spacing={1} alignItems="flex-start" justifyContent="flex-start">
         {/* Header */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: 2, borderRadius: 3 }}>
+          <Paper sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: 1, borderRadius: 1 }}>
             <Typography variant="h4" component="h1">
               미션 & 챌린지
             </Typography>
@@ -169,10 +169,10 @@ function Missions() {
         </Grid>
         {/* Missions List */}
         <Grid item xs={12}>
-          <Grid container spacing={3} alignItems="flex-start" justifyContent="flex-start">
+          <Grid container spacing={1} alignItems="flex-start" justifyContent="flex-start">
             {missions.length > 0 ? missions.map((mission) => (
               <Grid item xs={12} md={6} lg={4} key={mission.id} sx={{ display: 'flex' }}>
-                <Card sx={{ boxShadow: 2, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 260, borderRadius: 3, transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 6 } }}>
+                <Card sx={{ boxShadow: 1, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 80, borderRadius: 1, transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 4 } }}>
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                       <Typography variant="h6" component="div">
@@ -223,8 +223,8 @@ function Missions() {
                 </Card>
               </Grid>
             )) : (
-              <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 220 }}>
-                <Paper sx={{ p: 4, width: '100%', textAlign: 'center', boxShadow: 0, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 60 }}>
+                <Paper sx={{ p: 1, width: '100%', textAlign: 'center', boxShadow: 0, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Typography color="text.secondary">미션이 없습니다.</Typography>
                 </Paper>
               </Grid>
