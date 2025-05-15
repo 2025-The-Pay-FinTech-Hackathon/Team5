@@ -1,15 +1,10 @@
-// OCR API 연동 - Azure Computer Vision API 사용
-import axios from 'axios';
+// Mock OCR service for testing
+// Returns sample receipt data
+const mockProcessReceiptImage = async (imageFile) => {
+  // This is a temporary mock implementation
+  // TODO: Replace with actual OCR API integration (e.g. Google Cloud Vision, Azure Computer Vision)
 
-const API_KEY = process.env.REACT_APP_AZURE_VISION_KEY;
-const ENDPOINT = process.env.REACT_APP_AZURE_VISION_ENDPOINT;
-
-// Mock 함수 - 테스트용
-export const processReceiptImageMock = async (imageFile) => {
-  // 임시 데이터 반환을 위한 mock 함수입니다.
-  // 실제 구현은 아래 processReceiptImage 함수를 참고하세요.
-  
-  // 임시 데이터 반환
+  // Return mock data
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({
