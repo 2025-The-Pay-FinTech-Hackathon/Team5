@@ -198,14 +198,12 @@ const MyPage = () => {
       <BadgeDetails
         open={badgeDetailsOpen}
         onClose={() => setBadgeDetailsOpen(false)}
-        badges={[
-          { id: 1, name: '첫 저축', icon: '💰', description: '첫 저축 목표 달성', requirement: 1, tips: '첫 저축 목표를 설정하고 달성해보세요!' },
-          { id: 2, name: '미션 마스터', icon: '🎯', description: '10개의 미션 완료', requirement: 10, tips: '일일 미션을 꾸준히 완료해보세요.' },
-          { id: 3, name: '퀴즈 전문가', icon: '📚', description: '퀴즈 100점 달성', requirement: 100, tips: '퀴즈를 통해 금융 지식을 쌓아보세요.' },
-          { id: 4, name: '저축왕', icon: '👑', description: '100만원 저축 달성', requirement: 1000000, tips: '목표 금액을 조금씩 늘려가며 도전해보세요.' },
-          { id: 5, name: '습관 형성', icon: '📅', description: '30일 연속 저축', requirement: 30, tips: '매일 조금씩이라도 꾸준히 저축하는 습관을 만들어보세요.' },
-        ]}
-        userProgress={userProgress}
+        badge={{
+          name: '첫 저축 뱃지',
+          description: '첫 저축 목표를 달성하여 획득한 뱃지입니다.',
+          requirement: '첫 저축 목표 달성',
+          earnedDate: '2024년 3월 15일'
+        }}
       />
     </Container>
   );
