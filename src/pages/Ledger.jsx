@@ -123,8 +123,17 @@ function Ledger() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4, minHeight: '70vh' }}>
-      <Paper sx={{ p: 3, mb: 3, boxShadow: 2 }}>
+<Container maxWidth="md" sx={{ mt: 4, mb: 4, minHeight: '80vh' }}>
+  {/* 2. Box로 중앙 정렬 처리 */}
+  <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100%',
+    }}
+  >
+    <Paper sx={{ p: 3, width: '100%', maxWidth: 800, boxShadow: 2 }}>
         <Typography variant="h4" gutterBottom>가계부</Typography>
         {isParent && (
           <FormControl sx={{ minWidth: 180, mb: 2 }} size="small">
@@ -242,6 +251,7 @@ function Ledger() {
           <Button onClick={handleSave} variant="contained">저장</Button>
         </DialogActions>
       </Dialog>
+      </Box>
     </Container>
   );
 }
