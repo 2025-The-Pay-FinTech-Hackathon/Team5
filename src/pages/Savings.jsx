@@ -19,16 +19,18 @@ function Wishlist() {
   const [form, setForm] = useState({ name: '', targetAmount: '', memo: '', currentAmount: 0 });
   const [error, setError] = useState('');
   const [sortKey, setSortKey] = useState('latest');
+  const userId = user?.id;
 
   useEffect(() => {
     if (isParent) {
       const kids = getChildrenByParent(user.id);
       setChildren(kids);
       if (kids.length > 0) setSelectedChildId(kids[0].id);
+      setChildren(getChildrenByParent(userId));
     } else {
-      setChild(findChildById(user.id));
+      setChild(findChildById(userId));
     }
-  }, [user, location.pathname]);
+  }, [isParent, userId, location.pathname]);
 
   useEffect(() => {
     if (isParent && selectedChildId) {

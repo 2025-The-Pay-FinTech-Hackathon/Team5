@@ -46,6 +46,7 @@ function Missions() {
   });
   const [selectedMission, setSelectedMission] = useState(null);
   const [error, setError] = useState('');
+  const userId = user?.id;
 
   //미션 없는 경우 자동 생성 
   useEffect(() => {
@@ -64,15 +65,15 @@ function Missions() {
   // 미션 불러오기
   useEffect(() => {
     if (isParent) {
-      const children = getChildrenByParent(user.id);
+      const children = getChildrenByParent(userId);
       setMissions(children.flatMap(c => (c.missions || []).map(m => ({ ...m, childName: c.name, childId: c.id }))));
     } else {
-      const child = findChildById(user.id);
+      const child = findChildById(userId);
       setMissions(child?.missions || []);
     }
-  }, [user, location.pathname]);
+  }, [isParent, userId, location.pathname]);
 
-  // 미션 추가
+  // 미션 추가(부모만)
   const handleSubmitMission = () => {
     setError('');
     if (!newMission.title || !newMission.description || !newMission.reward || !newMission.deadline) {
@@ -98,53 +99,69 @@ function Missions() {
       // 미션 목록 즉시 갱신
       const updatedChildren = getChildrenByParent(user.id);
       setMissions(updatedChildren.flatMap(c => (c.missions || []).map(m => ({ ...m, childName: c.name, childId: c.id }))));
-    } else {
-      const child = findChildById(user.id);
-      const updated = { ...child };
-      updated.missions = [
-        ...(updated.missions || []),
-        {
-          id: Date.now(),
-          ...newMission,
-          progress: 0,
-          status: '진행중',
-          createdAt: new Date().toISOString().slice(0, 10),
-        },
-      ];
-      updateChild(updated);
-      setMissions(updated.missions); // 즉시 갱신
     }
     setOpenDialog(false);
     setNewMission({ title: '', description: '', reward: '', deadline: '' });
   };
 
-  // 미션 완료
-  const handleCompleteMission = (mission) => {
-  if (isParent) return;
-  const child = findChildById(user.id);
-  const updated = { ...child };
-  updated.missions = (updated.missions || []).map(m =>
-    m.id === mission.id ? { ...m, status: '완료', progress: 100, completedAt: new Date().toISOString().slice(0, 10) } : m
-  );
-  updated.points = (updated.points || 0) + Number(mission.reward || 0);
+  // 자녀: 미션 완료 요청(승인대기)
+  const handleRequestComplete = (mission) => {
+    if (isParent) return;
+    const child = findChildById(user.id);
+    const updated = { ...child };
+    updated.missions = (updated.missions || []).map(m =>
+      m.id === mission.id ? { ...m, status: '승인대기', progress: 100, requestedAt: new Date().toISOString().slice(0, 10) } : m
+    );
+    updateChild(updated);
+    setMissions(updated.missions);
+    setOpenDetailDialog(false);
+  };
 
-  // 🏅 뱃지 계산 추가
-  const badge = getMissionKingBadge(updated.missions);
-  if (!updated.badges) updated.badges = {};
-  if (badge) {
-    updated.badges['미션왕'] = badge;
-  }
+  // 부모: 미션 승인
+  const handleApprove = (mission) => {
+    if (!isParent) return;
+    const child = findChildById(mission.childId);
+    const updated = { ...child };
+    updated.missions = (updated.missions || []).map(m =>
+      m.id === mission.id ? { ...m, status: '완료', progress: 100, completedAt: new Date().toISOString().slice(0, 10) } : m
+    );
+    updated.points = (updated.points || 0) + Number(mission.reward || 0);
+    updateChildData(updated);
+    // 미션 목록 즉시 갱신
+    const children = getChildrenByParent(user.id);
+    setMissions(children.flatMap(c => (c.missions || []).map(m => ({ ...m, childName: c.name, childId: c.id }))));
+    setOpenDetailDialog(false);
+  };
 
-  updateChild(updated);
-  setMissions(updated.missions); // 즉시 갱신
-  setOpenDetailDialog(false);
-};
-
+  // 부모: 미션 거부
+  const handleReject = (mission) => {
+    if (!isParent) return;
+    const child = findChildById(mission.childId);
+    const updated = { ...child };
+    updated.missions = (updated.missions || []).map(m =>
+      m.id === mission.id ? { ...m, status: '거부', progress: 0, rejectedAt: new Date().toISOString().slice(0, 10) } : m
+    );
+    updateChildData(updated);
+    // 미션 목록 즉시 갱신
+    const children = getChildrenByParent(user.id);
+    setMissions(children.flatMap(c => (c.missions || []).map(m => ({ ...m, childName: c.name, childId: c.id }))));
+    setOpenDetailDialog(false);
+  };
 
   // 미션 상세보기
   const handleOpenDetail = (mission) => {
     setSelectedMission(mission);
     setOpenDetailDialog(true);
+  };
+
+  // 상태별 컬러/뱃지
+  const statusColor = (status) => {
+    switch (status) {
+      case '완료': return 'success';
+      case '승인대기': return 'warning';
+      case '거부': return 'error';
+      default: return 'primary';
+    }
   };
 
   return (
@@ -156,36 +173,38 @@ function Missions() {
             <Typography variant="h4" component="h1">
               미션 & 챌린지
             </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => setOpenDialog(true)}
-              sx={{ borderRadius: 2, fontWeight: 600 }}
-            >
-              새 미션 만들기
-            </Button>
+            {isParent && (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={() => setOpenDialog(true)}
+                sx={{ borderRadius: 2, fontWeight: 600 }}
+              >
+                새 미션 만들기
+              </Button>
+            )}
           </Paper>
         </Grid>
         {/* Missions List */}
         <Grid item xs={12}>
-          <Grid container spacing={1} alignItems="flex-start" justifyContent="flex-start">
+          <Grid container spacing={2} alignItems="flex-start" justifyContent="flex-start">
             {missions.length > 0 ? missions.map((mission) => (
               <Grid item xs={12} md={6} lg={4} key={mission.id} sx={{ display: 'flex' }}>
-                <Card sx={{ boxShadow: 1, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 80, borderRadius: 1, transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 4 } }}>
+                <Card sx={{ boxShadow: 2, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 120, borderRadius: 2, transition: 'box-shadow 0.2s', '&:hover': { boxShadow: 6 }, bgcolor: '#fffde7' }}>
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Typography variant="h6" component="div">
+                      <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
                         {mission.title}
                       </Typography>
                       <Chip
                         label={mission.status}
-                        color={mission.status === '완료' ? 'success' : 'primary'}
+                        color={statusColor(mission.status)}
                         size="small"
-                        sx={{ ml: 1, borderRadius: 1 }}
+                        sx={{ ml: 1, borderRadius: 1, fontWeight: 700 }}
                       />
                     </Box>
-                    <Typography color="text.secondary" gutterBottom>
+                    <Typography color="text.secondary" gutterBottom sx={{ mb: 1 }}>
                       {mission.description}
                     </Typography>
                     {isParent && mission.childName && (
@@ -205,7 +224,7 @@ function Missions() {
                       <LinearProgress
                         variant="determinate"
                         value={mission.progress}
-                        sx={{ height: 8, borderRadius: 4 }}
+                        sx={{ height: 8, borderRadius: 4, bgcolor: '#FFF9C4', '& .MuiLinearProgress-bar': { bgcolor: '#FFD600' } }}
                       />
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                         진행률: {mission.progress}%
@@ -215,9 +234,19 @@ function Missions() {
                   <CardActions>
                     <Button size="small" onClick={() => handleOpenDetail(mission)} startIcon={<InfoIcon />}>상세보기</Button>
                     {!isParent && mission.status === '진행중' && (
-                      <Button size="small" color="success" startIcon={<CheckCircleIcon />} onClick={() => handleCompleteMission(mission)}>
-                        완료하기
+                      <Button size="small" color="warning" startIcon={<CheckCircleIcon />} onClick={() => handleRequestComplete(mission)}>
+                        완료 요청
                       </Button>
+                    )}
+                    {isParent && mission.status === '승인대기' && (
+                      <>
+                        <Button size="small" color="success" onClick={() => handleApprove(mission)}>
+                          승인
+                        </Button>
+                        <Button size="small" color="error" onClick={() => handleReject(mission)}>
+                          거부
+                        </Button>
+                      </>
                     )}
                   </CardActions>
                 </Card>
@@ -314,9 +343,19 @@ function Missions() {
         <DialogActions>
           <Button onClick={() => setOpenDetailDialog(false)}>닫기</Button>
           {!isParent && selectedMission?.status === '진행중' && (
-            <Button color="success" variant="contained" onClick={() => handleCompleteMission(selectedMission)}>
-              완료하기
+            <Button color="warning" variant="contained" onClick={() => handleRequestComplete(selectedMission)}>
+              완료 요청
             </Button>
+          )}
+          {isParent && selectedMission?.status === '승인대기' && (
+            <>
+              <Button color="success" variant="contained" onClick={() => handleApprove(selectedMission)}>
+                승인
+              </Button>
+              <Button color="error" variant="contained" onClick={() => handleReject(selectedMission)}>
+                거부
+              </Button>
+            </>
           )}
         </DialogActions>
       </Dialog>

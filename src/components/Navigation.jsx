@@ -49,9 +49,9 @@ function Navigation({ user, onLogout }) {
         { text: '대시보드', icon: <DashboardIcon />, path: '/parent' },
         { text: '미션 관리', icon: <EmojiEventsIcon />, path: '/parent/missions' },
         { text: '저축 관리', icon: <SavingsIcon />, path: '/parent/savings' },
-        { text: '가계부', icon: <ListAltIcon />, path: '/ledger' },
-        { text: '위시리스트', icon: <FavoriteIcon />, path: '/wishlist' },
-        { text: '마이페이지', icon: <PersonIcon />, path: '/mypage' },
+        { text: '가계부', icon: <ListAltIcon />, path: '/parent/ledger' },
+        { text: '위시리스트', icon: <FavoriteIcon />, path: '/parent/wishlist' },
+        { text: '마이페이지', icon: <PersonIcon />, path: '/parent/mypage' },
       ]
     : [
         { text: '대시보드', icon: <DashboardIcon />, path: '/child' },
@@ -59,9 +59,9 @@ function Navigation({ user, onLogout }) {
         { text: '미션', icon: <EmojiEventsIcon />, path: '/child/missions' },
         { text: '저축', icon: <SavingsIcon />, path: '/child/savings' },
         { text: '보상 상점', icon: <StoreIcon />, path: '/child/store' },
-        { text: '가계부', icon: <ListAltIcon />, path: '/ledger' },
-        { text: '위시리스트', icon: <FavoriteIcon />, path: '/wishlist' },
-        { text: '마이페이지', icon: <PersonIcon />, path: '/mypage' },
+        { text: '가계부', icon: <ListAltIcon />, path: '/child/ledger' },
+        { text: '위시리스트', icon: <FavoriteIcon />, path: '/child/wishlist' },
+        { text: '마이페이지', icon: <PersonIcon />, path: '/child/mypage' },
       ];
 
   const handleDrawerToggle = () => {
@@ -70,7 +70,7 @@ function Navigation({ user, onLogout }) {
 
   const handleNavigation = (path) => {
     if (location.pathname !== path) {
-      window.location.href = path;
+      navigate(path);
     }
     setDrawerOpen(false);
   };
@@ -93,74 +93,43 @@ function Navigation({ user, onLogout }) {
     handleLogoutClick();
   };
 
-  const prefix = isParent ? '/parent' : '/child';
-
   return (
     <>
       <AppBar position="fixed" sx={{ borderRadius: 0, boxShadow: 2 }}>
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            Dondoli
-          </Typography>
-          <Typography variant="body1" sx={{ mr: 2 }}>
-            {user?.name}님
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              color="inherit"
-              onClick={() => navigate(`${prefix}/notifications`)}
-            >
-              <Notifications />
+        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+          {/* 왼쪽: 햄버거/로고 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <IconButton color="inherit" edge="start" onClick={handleDrawerToggle} sx={{ mr: 2 }}>
+              <MenuIcon />
             </IconButton>
-
-            <Button
-              color="inherit"
-              startIcon={<DashboardIcon />}
-              onClick={() => navigate(prefix)}
-            >
+            <Typography variant="h6" noWrap component="div">
+              Dondoli
+            </Typography>
+          </Box>
+          {/* 가운데: 메뉴 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button color="inherit" startIcon={<DashboardIcon />} onClick={() => navigate(isParent ? '/parent' : '/child')}>
               대시보드
             </Button>
-
-            <Button
-              color="inherit"
-              startIcon={<SchoolIcon />}
-              onClick={() => navigate(`${prefix}/education`)}
-            >
+            <Button color="inherit" startIcon={<SchoolIcon />} onClick={() => navigate(isParent ? '/parent/education' : '/child/education')}>
               금융 교육
             </Button>
-
-            <Button
-              color="inherit"
-              startIcon={<Message />}
-              onClick={() => navigate(`${prefix}/messages`)}
-            >
+            <Button color="inherit" startIcon={<Message />} onClick={() => navigate(isParent ? '/parent/messages' : '/child/messages')}>
               메시지
             </Button>
-
-            <Button
-              color="inherit"
-              startIcon={<Analytics />}
-              onClick={() => navigate(`${prefix}/analytics`)}
-            >
+            <Button color="inherit" startIcon={<Analytics />} onClick={() => navigate(isParent ? '/parent/analytics' : '/child/analytics')}>
               성과 분석
             </Button>
-
-            <Button
-              color="inherit"
-              startIcon={<People />}
-              onClick={() => navigate(`${prefix}/social`)}
-            >
+            <Button color="inherit" startIcon={<People />} onClick={() => navigate(isParent ? '/parent/social' : '/child/social')}>
               소셜
             </Button>
-
+          </Box>
+          {/* 오른쪽: 알림/프로필/이름 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body1" sx={{ mr: 1 }}>{user?.name}님</Typography>
+            <IconButton color="inherit" onClick={() => navigate(`${isParent ? '/parent' : '/child'}/notifications`)}>
+              <Notifications />
+            </IconButton>
             <IconButton
               size="large"
               aria-label="account of current user"
@@ -190,7 +159,7 @@ function Navigation({ user, onLogout }) {
             >
               <MenuItem onClick={() => {
                 handleClose();
-                navigate('/mypage');
+                navigate(isParent ? '/parent/mypage' : '/child/mypage');
               }}>
                 마이페이지
               </MenuItem>

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, GlobalStyles } from '@mui/material';
 import { useState } from 'react';
 import lottie from 'lottie-web';
@@ -6,7 +6,6 @@ import { defineElement } from 'lord-icon-element';
 import { lightTheme } from './theme/theme';
 
 // Components
-import Navigation from './components/Navigation';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import ErrorMessage from './components/common/ErrorMessage';
 import NotificationCenter from './components/notifications/NotificationCenter';
@@ -14,6 +13,10 @@ import MessageCenter from './components/messages/MessageCenter';
 import FinancialEducation from './components/education/FinancialEducation';
 import PerformanceAnalytics from './components/analytics/PerformanceAnalytics';
 import SocialFeatures from './components/social/SocialFeatures';
+
+// Layouts
+import ParentLayout from './layouts/ParentLayout';
+import ChildLayout from './layouts/ChildLayout';
 
 // Pages
 import Login from './pages/Login';
@@ -88,276 +91,65 @@ function App() {
               )
             } 
           />
-          <Route 
-            path="/signup" 
-            element={<Signup />} 
-          />
+          <Route path="/signup" element={<Signup />} />
+          
           {/* Parent Routes */}
           <Route
-            path="/parent"
+            path="/parent/*"
             element={
               user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <NotificationCenter />
-                  <ParentDashboard />
-                </>
+                <ParentLayout user={user} onLogout={handleLogout}>
+                  <Outlet />
+                </ParentLayout>
               ) : (
                 <Navigate to="/" replace />
               )
             }
-          />
-          <Route
-            path="/parent/messages"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <MessageCenter />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/education"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <FinancialEducation />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/analytics"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <PerformanceAnalytics />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/social"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <SocialFeatures />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+          >
+            <Route index element={<ParentDashboard />} />
+            <Route path="messages" element={<MessageCenter />} />
+            <Route path="education" element={<FinancialEducation />} />
+            <Route path="analytics" element={<PerformanceAnalytics />} />
+            <Route path="social" element={<SocialFeatures />} />
+            <Route path="missions" element={<Missions />} />
+            <Route path="savings" element={<Savings />} />
+            <Route path="report" element={<ParentReportPage />} />
+            <Route path="mypage" element={<MyPage user={user} onUserUpdate={setUser} />} />
+            <Route path="ledger" element={<Ledger />} />
+            <Route path="badges" element={<BadgePage />} />
+            <Route path="wishlist" element={<Wishlist />} />
+          </Route>
+          
           {/* Child Routes */}
           <Route
-            path="/child"
+            path="/child/*"
             element={
               user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <NotificationCenter />
-                  <ChildDashboard />
-                </>
+                <ChildLayout user={user} onLogout={handleLogout}>
+                  <Outlet />
+                </ChildLayout>
               ) : (
                 <Navigate to="/" replace />
               )
             }
-          />
-          <Route
-            path="/child/messages"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <MessageCenter />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/education"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <FinancialEducation />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/analytics"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <PerformanceAnalytics />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/social"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <SocialFeatures />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/missions"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Missions />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/savings"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Savings />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/quiz"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Quiz />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/missions"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Missions />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/savings"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Savings />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/store"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Store />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/mypage"
-            element={
-              user ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <MyPage user={user} onUserUpdate={setUser} />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/ledger"
-            element={
-              user ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Ledger />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/badges"
-            element={
-              user ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <BadgePage />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+          >
+            <Route index element={<ChildDashboard />} />
+            <Route path="messages" element={<MessageCenter />} />
+            <Route path="education" element={<FinancialEducation />} />
+            <Route path="analytics" element={<PerformanceAnalytics />} />
+            <Route path="social" element={<SocialFeatures />} />
+            <Route path="quiz" element={<Quiz />} />
+            <Route path="missions" element={<Missions />} />
+            <Route path="savings" element={<Savings />} />
+            <Route path="store" element={<Store />} />
+            <Route path="mypage" element={<MyPage user={user} onUserUpdate={setUser} />} />
+            <Route path="ledger" element={<Ledger />} />
+            <Route path="badges" element={<BadgePage />} />
+            <Route path="wishlist" element={<Wishlist />} />
+          </Route>
+          
+          {/* Common Routes */}
           <Route path="/memory-game" element={<MemoryGame />} />
-          <Route path="/parent/report" element={<ParentReportPage />} />
-          <Route
-            path="/wishlist"
-            element={
-              user ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Wishlist />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

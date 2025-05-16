@@ -47,17 +47,18 @@ function Ledger() {
   const [form, setForm] = useState({ amount: '', memo: '', category: '', date: '' });
   const [error, setError] = useState('');
   const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const userId = user?.id;
 
   // 데이터 불러오기
   useEffect(() => {
     if (isParent) {
-      const kids = getChildrenByParent(user.id);
+      const kids = getChildrenByParent(userId);
       setChildren(kids);
       if (kids.length > 0) setSelectedChildId(kids[0].id);
     } else {
-      setChild(findChildById(user.id));
+      setChild(findChildById(userId));
     }
-  }, [user, location.pathname]);
+  }, [isParent, userId, location.pathname]);
 
   useEffect(() => {
     if (isParent && selectedChildId) {
@@ -244,8 +245,5 @@ function Ledger() {
     </Container>
   );
 }
-
-
-
 
 export default Ledger; 

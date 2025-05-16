@@ -22,13 +22,13 @@ function Wishlist() {
 
   useEffect(() => {
     if (isParent) {
-      const kids = getChildrenByParent(user.id);
+      const kids = getChildrenByParent(userId);
       setChildren(kids);
       if (kids.length > 0) setSelectedChildId(kids[0].id);
     } else {
-      setChild(findChildById(user.id));
+      setChild(findChildById(userId));
     }
-  }, [user, location.pathname]);
+  }, [isParent, userId, location.pathname]);
 
   useEffect(() => {
     if (isParent && selectedChildId) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Container,
@@ -23,6 +23,19 @@ import {
   Avatar,
   Chip,
   Snackbar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   AccountBalance as AccountBalanceIcon,
@@ -32,6 +45,13 @@ import {
   Star as StarIcon,
   Savings as SavingsIcon,
   CheckCircle as CheckCircleIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  EmojiEvents as EmojiEventsIcon,
+  ListAlt as ListAltIcon,
+  Favorite as FavoriteIcon,
+  ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material';
 import {
   getChildrenByParent,
@@ -44,6 +64,7 @@ import {
   setDondoliData,
 } from '../utils/localData';
 import ryanCoin from '../../public/ryan-coin.png';
+import { getRecentTransactions } from '../utils/transactionUtils';
 
 function randomPassword(length = 6) {
   return Math.random().toString(36).slice(-length);
@@ -51,6 +72,9 @@ function randomPassword(length = 6) {
 
 function ParentDashboard() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // 로그인한 부모 정보 가져오기
   const parentId = JSON.parse(sessionStorage.getItem('user'))?.id;
   const [children, setChildren] = useState([]);
@@ -59,12 +83,11 @@ function ParentDashboard() {
   const [openSendDialog, setOpenSendDialog] = useState(false);
   const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [selectedChild, setSelectedChild] = useState(null);
-  const [addForm, setAddForm] = useState({ name: '', email: '' });
+  const [addForm, setAddForm] = useState({ name: '', email: '', password: '' });
   const [sendAmount, setSendAmount] = useState('');
   const [error, setError] = useState('');
   const [newChildInfo, setNewChildInfo] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const navigate = useNavigate();
   const [loanRequests, setLoanRequests] = useState([]);
   const [ledgerPage, setLedgerPage] = useState(0);
   const ledgersPerPage = 10;
@@ -73,22 +96,27 @@ function ParentDashboard() {
     .sort((a, b) => (b.date > a.date ? 1 : -1));
   const pagedLedgers = allLedgers.slice(ledgerPage * ledgersPerPage, (ledgerPage + 1) * ledgersPerPage);
 
-  // 자녀 목록 불러오기
   useEffect(() => {
-    const kids = getChildrenByParent(parentId);
-    setChildren(kids);
-    // 모든 자녀의 대출 요청 모으기
-    const allLoanRequests = kids.flatMap(child =>
-      (child.loanRequests || []).map(req => ({ ...req, childId: child.id, childName: child.name }))
-    );
-    setLoanRequests(allLoanRequests);
-  }, [parentId, location.pathname, children.length]);
+    const loadData = async () => {
+      const user = JSON.parse(sessionStorage.getItem('user'));
+      const childrenData = await getChildrenByParent(user.id);
+      setChildren(childrenData);
+      
+      const transactions = await getRecentTransactions(user.id);
+      setRecentTransactions(transactions);
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    setChildren(getChildrenByParent(parentId));
+  }, [parentId, location.pathname]);
 
   // 자녀 추가
   const handleAddChild = () => {
     setError('');
-    if (!addForm.name || !addForm.email) {
-      setError('이름과 이메일을 입력해주세요.');
+    if (!addForm.name || !addForm.email || !addForm.password) {
+      setError('이름, 이메일, 비밀번호를 모두 입력해주세요.');
       return;
     }
     // 자녀 계정도 users에 추가
@@ -98,7 +126,7 @@ function ParentDashboard() {
       return;
     }
     const childId = Date.now();
-    const password = randomPassword(6);
+    const password = addForm.password;
     addChild({
       id: childId,
       name: addForm.name,
@@ -123,7 +151,7 @@ function ParentDashboard() {
     saveUsers(users);
     setChildren(getChildrenByParent(parentId));
     setNewChildInfo({ email: addForm.email, password });
-    setAddForm({ name: '', email: '' });
+    setAddForm({ name: '', email: '', password: '' });
   };
 
   // 대출 승인
@@ -183,12 +211,27 @@ function ParentDashboard() {
     if (!sendAmount || isNaN(sendAmount) || Number(sendAmount) <= 0) return;
     const updated = { ...selectedChild };
     updated.balance += Number(sendAmount);
-    updated.ledgers = [
-      { type: '입금', amount: Number(sendAmount), date: new Date().toISOString().slice(0, 10), memo: '부모 입금' },
-      ...(updated.ledgers || []),
-    ];
+    // 거래내역(ledger) 추가
+    const ledgerEntry = {
+      type: '입금',
+      amount: Number(sendAmount),
+      date: new Date().toISOString().slice(0, 10),
+      memo: '부모 입금',
+      id: Date.now(),
+    };
+    updated.ledgers = [ledgerEntry, ...(updated.ledgers || [])];
     updateChild(updated);
+    // 거래내역(부모 recentTransactions)에도 push
+    const transactionEntry = {
+      id: Date.now(),
+      childName: updated.name,
+      description: '용돈 입금',
+      amount: Number(sendAmount),
+      date: new Date().toISOString(),
+      status: '완료',
+    };
     setChildren(getChildrenByParent(parentId));
+    setRecentTransactions(prev => [transactionEntry, ...prev]);
     setOpenSendDialog(false);
     setSendAmount('');
   };
@@ -235,226 +278,474 @@ function ParentDashboard() {
     }
   };
 
+  // 용돈 보내기 다이얼로그 열 때 자녀 자동 선택
+  const handleOpenSendDialog = () => {
+    if (children.length > 0) setSelectedChild(children[0]);
+    setOpenSendDialog(true);
+  };
+
+  const quickActions = [
+    { icon: <SavingsIcon />, label: '저축 관리', path: '/parent/savings' },
+    { icon: <EmojiEventsIcon />, label: '미션 관리', path: '/parent/missions' },
+    { icon: <ListAltIcon />, label: '가계부', path: '/parent/ledger' },
+    { icon: <FavoriteIcon />, label: '위시리스트', path: '/parent/wishlist' },
+  ];
+
+  // 최근 거래 내역: 모든 자녀의 ledgers(가계부), 저축, 용돈 등 합산
+  const allTransactions = children.flatMap(child =>
+    (child.ledgers || []).map(l => ({
+      id: l.id || Date.now() + Math.random(),
+      childName: child.name,
+      description: l.memo || l.type || '거래',
+      amount: l.type === '입금' ? l.amount : -Math.abs(l.amount),
+      date: l.date,
+      status: '완료',
+    }))
+  ).sort((a, b) => (b.date > a.date ? 1 : -1));
+
   return (
-    <Container maxWidth="md" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '70vh' }}>
-      {/* 상단 헤더/캐릭터/설명 */}
-      <Paper sx={{ p: 3, mb: 4, display: 'flex', alignItems: 'center', background: '#FFFDE7', boxShadow: 3, borderRadius: 4 }}>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h4" sx={{ fontWeight: 900, color: '#222', mb: 1 }}>
-            내 자녀의 금융생활<br />한 눈에 보기
+    <Box sx={{ 
+      minHeight: '100vh',
+      bgcolor: '#FFFDE7',
+      pt: { xs: '56px', sm: '64px' },
+      pb: 4
+    }}>
+      {/* 상단 배너 */}
+      <Box
+        sx={{
+          bgcolor: '#FFD600',
+          py: { xs: 5, md: 8 },
+          mb: 4,
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: { xs: 180, md: 240 },
+          borderRadius: 0,
+        }}
+      >
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              mb: 2,
+              color: '#222',
+              zIndex: 2,
+              position: 'relative',
+            }}
+          >
+            안녕하세요, {JSON.parse(sessionStorage.getItem('user'))?.name}님!
           </Typography>
-          <Typography variant="subtitle1" sx={{ color: '#555', mb: 2 }}>
-            포인트부터 저축까지, 성장하는 금융 습관을 함께 확인하세요.
+          <Typography
+            variant="h6"
+            sx={{
+              color: '#666',
+              fontWeight: 500,
+              zIndex: 2,
+              position: 'relative',
+            }}
+          >
+            오늘도 자녀의 금융 교육을 함께해요
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
-            <Button variant="contained" sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 700, fontSize: '1.1rem', boxShadow: 2 }} onClick={() => setOpenAddDialog(true)}>
-              자녀 추가
-            </Button>
-            <Button variant="outlined" sx={{ borderColor: '#FFD600', color: '#222', fontWeight: 700, fontSize: '1.1rem', bgcolor: '#fff', '&:hover': { bgcolor: '#FFF9C4' } }} onClick={() => window.location.reload()}>
-              전체 보기
-            </Button>
-          </Box>
-        </Box>
-        <Box sx={{ minWidth: 180, display: { xs: 'none', md: 'block' } }}>
-          <img src={ryanCoin} alt="캐릭터" style={{ width: 180, height: 'auto', marginLeft: 24 }} />
-        </Box>
-      </Paper>
-      <Grid container spacing={3} alignItems="flex-start">
+        </Container>
+        {/* 라이언 이미지 */}
+        <Box
+          component="img"
+          src="/ryan-coin.png"
+          alt="Ryan Coin"
+          sx={{
+            position: 'absolute',
+            right: { xs: 24, md: 60 },
+            top: { xs: 24, md: 32 },
+            width: { xs: 110, sm: 150, md: 210, lg: 240 },
+            height: 'auto',
+            zIndex: 0,
+            userSelect: 'none',
+            pointerEvents: 'none',
+            objectFit: 'contain',
+          }}
+        />
+      </Box>
+
+      <Container maxWidth="lg">
         {/* 빠른 기능 */}
-        <Grid item xs={12} md={3}>
-          <Paper sx={{ p: 3, minHeight: 220, display: 'flex', flexDirection: 'column', borderRadius: 3, boxShadow: 2, mb: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#222', mb: 2 }}>
-              용돈/미션/퀴즈/보고서
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Button variant="contained" startIcon={<AccountBalanceIcon />} sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 700 }} onClick={() => setOpenSendDialog(true)} disabled={children.length === 0}>
-                용돈 보내기
-              </Button>
-              <Button variant="contained" startIcon={<SchoolIcon />} sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 700 }} onClick={() => window.location.href = '/parent/missions'}>
-                미션 생성
-              </Button>
-              <Button variant="contained" startIcon={<AssignmentIcon />} sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 700 }} onClick={() => window.location.href = '/parent/quiz'}>
-                퀴즈 관리
-              </Button>
-              <Button variant="contained" startIcon={<TrendingUpIcon />} sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 700 }} onClick={() => window.location.href = '/parent/report'}>
-                성과 보고서
-              </Button>
-            </Box>
-          </Paper>
-        </Grid>
+        <Paper sx={{ 
+          p: 3, 
+          mb: 4,
+          borderRadius: 2,
+          bgcolor: '#fff',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+        }}>
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
+            빠른 기능
+          </Typography>
+          <Grid container spacing={2}>
+            {quickActions.map((action) => (
+              <Grid item xs={6} sm={3} key={action.label}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={action.icon}
+                  onClick={() => navigate(action.path)}
+                  sx={{
+                    py: 2,
+                    bgcolor: '#FFD600',
+                    color: '#222',
+                    '&:hover': {
+                      bgcolor: '#FFE066',
+                    },
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  {action.label}
+                </Button>
+              </Grid>
+            ))}
+          </Grid>
+        </Paper>
+
         {/* 자녀 현황 */}
-        <Grid item xs={12} md={9}>
-          <Paper sx={{ p: 3, minHeight: 220, borderRadius: 3, boxShadow: 2, mb: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#222', mb: 2 }}>
+        <Paper sx={{ 
+          p: 3, 
+          mb: 4,
+          borderRadius: 2,
+          bgcolor: '#fff',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+        }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
               자녀 현황
             </Typography>
-            <Grid container spacing={2} justifyContent="center">
-              {children.map((child) => {
-                const stats = getChildStats(child);
-                return (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={child.id} sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <Card sx={{ boxShadow: 3, borderRadius: 3, border: '1.5px solid #FFE066', minWidth: 220, maxWidth: 300, minHeight: 160, mx: 'auto' }}>
-                      <CardContent>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: '#222' }}>{child.name}</Typography>
-                        <Typography sx={{ color: '#555', fontWeight: 500 }}>잔액: {child.balance.toLocaleString()}원</Typography>
-                        <Typography sx={{ color: '#555', fontWeight: 500 }}>신용점수: {child.creditScore}</Typography>
-                        <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                          <Chip icon={<StarIcon />} label={`획득: ${stats.totalPointsEarned}점`} sx={{ bgcolor: '#FFF9C4', color: '#222', fontWeight: 700 }} />
-                          <Chip icon={<SavingsIcon />} label={`저축: ${stats.savingsProgress}%`} sx={{ bgcolor: '#FFF9C4', color: '#222', fontWeight: 700 }} />
-                          <Chip icon={<CheckCircleIcon />} label={`미션: ${stats.missionCompletionRate}%`} sx={{ bgcolor: '#FFF9C4', color: '#222', fontWeight: 700 }} />
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenAddDialog(true)}
+              sx={{
+                bgcolor: '#FFD600',
+                color: '#222',
+                '&:hover': {
+                  bgcolor: '#FFE066',
+                },
+                fontWeight: 600,
+                borderRadius: 2,
+              }}
+            >
+              자녀 추가
+            </Button>
+          </Box>
+          <Grid container spacing={3}>
+            {children.map((child) => {
+              // 안전하게 값 계산
+              const points = typeof child.points === 'number' ? child.points : 0;
+              const savingsList = Array.isArray(child.savings) ? child.savings : [];
+              const savingsRate = savingsList.length > 0
+                ? Math.round(savingsList.reduce((sum, s) => sum + ((s.currentAmount || 0) / (s.targetAmount || 1)), 0) / savingsList.length * 100)
+                : 0;
+              const savingsAmount = savingsList.reduce((sum, s) => sum + (s.currentAmount || 0), 0);
+              const missionsList = Array.isArray(child.missions) ? child.missions : [];
+              const missionsCompleted = missionsList.filter(m => m.status === '완료').length;
+              const missionsTotal = missionsList.length;
+              const missionRate = missionsTotal > 0 ? Math.round((missionsCompleted / missionsTotal) * 100) : 0;
+              const creditScore = typeof child.creditScore === 'number' ? child.creditScore : 700;
+              const balance = typeof child.balance === 'number' ? child.balance : 0;
+              const totalPointsEarned = missionsList.reduce((sum, m) => sum + (m.status === '완료' ? Number(m.reward || 0) : 0), 0);
+              const totalPointsUsed = Array.isArray(child.purchases) ? child.purchases.reduce((sum, p) => sum + (p.points || 0), 0) : 0;
+              return (
+                <Grid item xs={12} sm={6} md={4} key={child.id}>
+                  <Card sx={{ borderRadius: 3, boxShadow: '0 4px 16px #F5F5F5', bgcolor: '#FFF', border: '1px solid #F5F5F5' }}>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Avatar
+                          src={child.profileImage}
+                          alt={child.name}
+                          sx={{ width: 56, height: 56, mr: 2, bgcolor: '#FFD600' }}
+                        >
+                          {child.name[0]}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                            {child.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {child.age ? `${child.age}세` : ''}
+                          </Typography>
                         </Box>
-                        <Typography variant="body2" sx={{ color: '#888', mt: 1 }}>이메일: {child.email}</Typography>
-                      </CardContent>
-                      <CardActions>
-                        <Button size="small" variant="outlined" sx={{ borderColor: '#FFD600', color: '#222', fontWeight: 700 }} onClick={() => handleOpenDetail(child)}>상세보기</Button>
-                        <Button size="small" variant="contained" sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 700 }} onClick={() => { setSelectedChild(child); setOpenSendDialog(true); }}>용돈 보내기</Button>
-                      </CardActions>
-                    </Card>
-                  </Grid>
-                );
-              })}
-            </Grid>
-          </Paper>
-        </Grid>
+                      </Box>
+                      {/* 주요 현황 정보 */}
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#222' }}>
+                          잔액: {balance.toLocaleString()}원
+                          &nbsp;&nbsp;|&nbsp;&nbsp;신용점수: {creditScore}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#757575' }}>
+                          누적 획득: {totalPointsEarned}점
+                          &nbsp;&nbsp;|&nbsp;&nbsp;사용: {totalPointsUsed}점
+                        </Typography>
+                      </Box>
+                      {/* colorful chips */}
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                        <Chip
+                          label={`저축: ${savingsRate}%`}
+                          sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 600, borderRadius: 2, boxShadow: '0 2px 8px #F5F5F5' }}
+                        />
+                        <Chip
+                          label={`미션: ${missionRate}%`}
+                          sx={{ bgcolor: '#40A9FF', color: '#fff', fontWeight: 600, borderRadius: 2, boxShadow: '0 2px 8px #F5F5F5' }}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        이메일: {child.email}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<EditIcon />}
+                          onClick={() => navigate(`/parent/children/${child.id}/edit`)}
+                          sx={{ 
+                            color: '#666',
+                            borderColor: '#666',
+                            '&:hover': {
+                              borderColor: '#222',
+                              bgcolor: 'rgba(0,0,0,0.04)'
+                            }
+                          }}
+                        >
+                          수정
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<DeleteIcon />}
+                          onClick={() => {
+                            if (window.confirm(`${child.name}님을 삭제하시겠습니까?`)) {
+                              // 삭제 처리
+                              const updatedChildren = children.filter(c => c.id !== child.id);
+                              setChildren(updatedChildren);
+                              setSnackbar({
+                                open: true,
+                                message: `${child.name}님이 삭제되었습니다.`,
+                                severity: 'success'
+                              });
+                            }
+                          }}
+                          sx={{ 
+                            color: '#d32f2f',
+                            borderColor: '#d32f2f',
+                            '&:hover': {
+                              borderColor: '#d32f2f',
+                              bgcolor: 'rgba(211,47,47,0.04)'
+                            }
+                          }}
+                        >
+                          삭제
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          startIcon={<AccountBalanceIcon />}
+                          onClick={() => {
+                            setSelectedChild(child);
+                            setOpenSendDialog(true);
+                          }}
+                          sx={{ 
+                            bgcolor: '#FFD600',
+                            color: '#222',
+                            '&:hover': {
+                              bgcolor: '#FFE066',
+                            },
+                            fontWeight: 600,
+                          }}
+                        >
+                          용돈 보내기
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Paper>
+
         {/* 최근 거래 내역 */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 2, mb: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#222', mb: 2 }}>
-              최근 활동 내역
-            </Typography>
-            <Box sx={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
-                <thead>
-                  <tr style={{ background: '#FFF9C4', color: '#222', fontWeight: 700 }}>
-                    <th style={{ padding: '10px', borderBottom: '2px solid #FFD600' }}>요일</th>
-                    <th style={{ padding: '10px', borderBottom: '2px solid #FFD600' }}>활동</th>
-                    <th style={{ padding: '10px', borderBottom: '2px solid #FFD600' }}>상세 내용</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagedLedgers.map((ledger, idx) => (
-                    <tr key={ledger.childName + '-' + idx} style={{ borderBottom: '1px solid #FFE066' }}>
-                      <td style={{ padding: '10px', textAlign: 'center', color: '#222', fontWeight: 600 }}>{ledger.date}</td>
-                      <td style={{ padding: '10px', textAlign: 'center', color: '#222', fontWeight: 600 }}>{ledger.type}</td>
-                      <td style={{ padding: '10px', color: '#555' }}>{ledger.childName} | {ledger.amount.toLocaleString()}원{ledger.memo ? ' | ' + ledger.memo : ''}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, gap: 2 }}>
-              <Button onClick={() => setLedgerPage(ledgerPage - 1)} disabled={ledgerPage === 0} variant="outlined" sx={{ borderColor: '#FFD600', color: '#222', fontWeight: 700 }}>이전</Button>
-              <Button onClick={() => setLedgerPage(ledgerPage + 1)} disabled={(ledgerPage + 1) * ledgersPerPage >= allLedgers.length} variant="outlined" sx={{ borderColor: '#FFD600', color: '#222', fontWeight: 700 }}>다음</Button>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
-      {/* 대출 요청 관리 */}
-      {loanRequests.length > 0 && (
-        <Grid item xs={12} sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Paper sx={{ p: 1, flexGrow: 1, minHeight: 60, display: 'flex', flexDirection: 'column', mb: 1, borderRadius: 1, boxShadow: 1 }}>
-            <Typography variant="h6" gutterBottom>
-              대출 요청 관리
-            </Typography>
-            <List>
-              {loanRequests.map((req) => (
-                <Box key={req.id}>
-                  <ListItem>
-                    <ListItemText
-                      primary={`${req.childName} - ${req.amount.toLocaleString()}원 (${req.period}개월) | 사유: ${req.reason}`}
-                      secondary={`요청일: ${req.requestedAt}`}
-                    />
-                    <Button color="success" onClick={() => handleApproveLoan(req)} sx={{ mr: 1 }}>승인</Button>
-                    <Button color="error" onClick={() => handleRejectLoan(req)}>거절</Button>
-                  </ListItem>
-                  <Divider />
-                </Box>
-              ))}
-            </List>
-          </Paper>
-        </Grid>
-      )}
+        <Paper sx={{ 
+          p: 3,
+          borderRadius: 2,
+          bgcolor: '#fff',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+        }}>
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
+            최근 거래 내역
+          </Typography>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>날짜</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>자녀</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>내용</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>금액</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>상태</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {allTransactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{transaction.childName}</TableCell>
+                    <TableCell>{transaction.description}</TableCell>
+                    <TableCell sx={{ 
+                      color: transaction.amount > 0 ? '#2e7d32' : '#d32f2f',
+                      fontWeight: 600
+                    }}>
+                      {transaction.amount.toLocaleString()}원
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={transaction.status}
+                        color={transaction.status === '완료' ? 'success' : 'warning'}
+                        size="small"
+                        sx={{ fontWeight: 600 }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Container>
 
       {/* Add Child Dialog */}
-      <Dialog open={openAddDialog} onClose={() => { setOpenAddDialog(false); setNewChildInfo(null); }} maxWidth="xs" fullWidth>
+      <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>자녀 추가</DialogTitle>
         <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          {newChildInfo ? (
-            <Box sx={{ my: 2 }}>
-              <Alert severity="success">
-                <Typography variant="subtitle1">자녀 계정이 생성되었습니다!</Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>아래 정보를 자녀에게 전달하세요.</Typography>
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="body2"><b>이메일:</b> {newChildInfo.email}</Typography>
-                  <Typography variant="body2"><b>비밀번호:</b> {newChildInfo.password}</Typography>
-                </Box>
-              </Alert>
-            </Box>
-          ) : (
-            <>
-              <TextField
-                fullWidth
-                label="이름"
-                name="name"
-                value={addForm.name}
-                onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
-                margin="normal"
-                required
-              />
-              <TextField
-                fullWidth
-                label="이메일"
-                name="email"
-                value={addForm.email}
-                onChange={e => setAddForm(f => ({ ...f, email: e.target.value }))}
-                margin="normal"
-                required
-              />
-            </>
-          )}
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              label="이름"
+              value={addForm.name}
+              onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              label="이메일"
+              type="email"
+              value={addForm.email}
+              onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              fullWidth
+              label="비밀번호"
+              type="password"
+              value={addForm.password}
+              onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+              sx={{ mb: 2 }}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setOpenAddDialog(false); setNewChildInfo(null); }}>닫기</Button>
-          {!newChildInfo && <Button onClick={handleAddChild} variant="contained" color="primary">추가</Button>}
+          <Button onClick={() => setOpenAddDialog(false)}>취소</Button>
+          <Button
+            variant="contained"
+            onClick={handleAddChild}
+            sx={{
+              bgcolor: '#FFD600',
+              color: '#222',
+              '&:hover': {
+                bgcolor: '#FFE066',
+              },
+              fontWeight: 600,
+            }}
+          >
+            추가
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Send Allowance Dialog */}
-      <Dialog open={openSendDialog} onClose={() => setOpenSendDialog(false)} maxWidth="xs" fullWidth>
+      <Dialog open={openSendDialog} onClose={() => setOpenSendDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>용돈 보내기</DialogTitle>
         <DialogContent>
-          <TextField
-            fullWidth
-            label="금액"
-            type="number"
-            value={sendAmount}
-            onChange={e => setSendAmount(e.target.value)}
-            margin="normal"
-            required
-          />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {selectedChild ? `${selectedChild.name} (현재 잔액: ${selectedChild.balance.toLocaleString()}원)` : ''}
-          </Typography>
+          <Box sx={{ mt: 2 }}>
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel>자녀 선택</InputLabel>
+              <Select
+                value={selectedChild?.id || ''}
+                onChange={(e) => {
+                  const child = children.find(c => c.id === e.target.value);
+                  setSelectedChild(child);
+                }}
+                label="자녀 선택"
+              >
+                {children.map((child) => (
+                  <MenuItem key={child.id} value={child.id}>
+                    {child.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              label="금액"
+              type="number"
+              value={sendAmount}
+              onChange={(e) => setSendAmount(e.target.value)}
+              InputProps={{
+                endAdornment: <Typography>원</Typography>,
+              }}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenSendDialog(false)}>취소</Button>
-          <Button onClick={handleSendAllowance} variant="contained" color="primary" disabled={!selectedChild}>보내기</Button>
+          <Button
+            variant="contained"
+            onClick={handleSendAllowance}
+            sx={{
+              bgcolor: '#FFD600',
+              color: '#222',
+              '&:hover': {
+                bgcolor: '#FFE066',
+              },
+              fontWeight: 600,
+            }}
+          >
+            보내기
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Child Detail Dialog */}
+      {/* Detail Dialog */}
       <Dialog open={openDetailDialog} onClose={() => setOpenDetailDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>자녀 상세 정보</DialogTitle>
         <DialogContent>
           {selectedChild && (
             <Box>
-              <Typography variant="h6">{selectedChild.name}</Typography>
-              <Typography>잔액: {selectedChild.balance.toLocaleString()}원</Typography>
-              <Typography>신용점수: {selectedChild.creditScore}</Typography>
-              <Typography>포인트: {selectedChild.points}</Typography>
-              <Typography sx={{ mt: 2 }}>최근 미션: {selectedChild.missions?.length || 0}개</Typography>
-              <Typography>저축 목표: {selectedChild.savings?.length || 0}개</Typography>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+                {selectedChild.name}
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography>
+                  <strong>잔액:</strong> {selectedChild.balance.toLocaleString()}원
+                </Typography>
+                <Typography>
+                  <strong>신용점수:</strong> {selectedChild.creditScore}
+                </Typography>
+                <Typography>
+                  <strong>포인트:</strong> {selectedChild.points}
+                </Typography>
+                <Typography>
+                  <strong>최근 미션:</strong> {selectedChild.missions?.length || 0}개
+                </Typography>
+                <Typography>
+                  <strong>저축 목표:</strong> {selectedChild.savings?.length || 0}개
+                </Typography>
+              </Box>
             </Box>
           )}
         </DialogContent>
@@ -462,6 +753,7 @@ function ParentDashboard() {
           <Button onClick={() => setOpenDetailDialog(false)}>닫기</Button>
         </DialogActions>
       </Dialog>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={2000}
@@ -472,7 +764,7 @@ function ParentDashboard() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 }
 
