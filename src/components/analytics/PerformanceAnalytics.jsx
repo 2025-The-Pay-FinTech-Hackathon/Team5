@@ -83,10 +83,20 @@ const PerformanceAnalytics = ({ data }) => {
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Box sx={{ width: '100%', mr: 1 }}>
-                          <LinearProgress
-                            variant="determinate"
-                            value={(goal.current / goal.target) * 100}
-                          />
+                        <LinearProgress
+  variant="determinate"
+  value={((currentQuestion + (showExplanation ? 1 : 0)) / questions.length) * 100}
+  sx={{
+    height: 8,
+    borderRadius: 5,
+    mt: 1,
+    '& .MuiLinearProgress-bar': {
+      backgroundColor: '#FFD600',
+    },
+    backgroundColor: '#FFEFB0',
+  }}
+/>
+
                         </Box>
                         <Box sx={{ minWidth: 35 }}>
                           <Typography variant="body2" color="text.secondary">

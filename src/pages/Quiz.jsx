@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { findChildById, updateChild } from '../utils/localData';
 import { checkAndUpdateBadges } from '../utils/badgeUtils';
-
 import {
-  Container,
   Paper,
   Typography,
   Box,
@@ -12,8 +10,6 @@ import {
   RadioGroup,
   FormControlLabel,
   FormControl,
-  Card,
-  CardContent,
   LinearProgress,
   Alert,
 } from '@mui/material';
@@ -45,21 +41,14 @@ function Quiz() {
       correctAnswer: '돈을 빌려주고 받는 보상',
       explanation: '이자는 돈을 빌려주고 받는 보상입니다. 은행에 돈을 맡기면 이자를 받고, 돈을 빌리면 이자를 내야 해요.',
     },
-    // 더 많은 문제 추가 가능
   ];
 
-  const handleAnswerSelect = (event) => {
-    setSelectedAnswer(event.target.value);
-  };
+  const handleAnswerSelect = (event) => setSelectedAnswer(event.target.value);
 
   const handleSubmit = () => {
     const isCorrect = selectedAnswer === questions[currentQuestion].correctAnswer;
+    if (isCorrect) setScore(score + 1);
 
-    if (isCorrect) {
-      setScore(score + 1);
-    }
-
-    // 정답 기록 저장
     if (child) {
       const updated = { ...child };
       updated.quizzes = [
@@ -96,107 +85,184 @@ function Quiz() {
     setQuizCompleted(false);
   };
 
-  if (quizCompleted) {
-    return (
-      <Container maxWidth="md" sx={{ pt: '64px', mt: 2 }}>
-        <Paper sx={{ p: 1, textAlign: 'center', borderRadius: 1 }}>
-          <Typography variant="h4" gutterBottom>
-            퀴즈 완료!
-          </Typography>
-          <Typography variant="h5" color="primary" gutterBottom>
-            점수: {score} / {questions.length}
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            onClick={handleRestart}
-            sx={{ mt: 2 }}
-          >
-            다시 시작하기
-          </Button>
-        </Paper>
-      </Container>
-    );
-  }
-
   return (
-    <Container maxWidth="md" sx={{ pt: '64px', mt: 2 }}>
-      <Paper sx={{ p: 1, borderRadius: 1 }}>
-        <Box sx={{ mb: 1 }}>
-          <Typography variant="h5" gutterBottom>
-            금융 퀴즈
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={(currentQuestion / questions.length) * 100}
-            sx={{ height: 10, borderRadius: 5 }}
-          />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {currentQuestion + 1} / {questions.length}
-          </Typography>
-        </Box>
+    <Box
+      sx={{
+        backgroundColor: '#f9f9f9',
+        minHeight: '100vh',
+        width: '100vw',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        px: 2,
+        py: 4,
+      }}
+    >
+      <Paper
+        sx={{
+          width: '100%',
+          maxWidth: 960,
+          minHeight: 500,
+          mx: 'auto', // 수평 정렬 강제
+          p: 4,
+          borderRadius: 4,
+          backgroundColor: '#fff',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        {quizCompleted ? (
+          <Box sx={{ textAlign: 'center', width: '100%' }}>
+            <Typography variant="h4" gutterBottom>
+              퀴즈 완료!
+            </Typography>
+            <Typography variant="h5" sx={{ color: '#FFD600' }} gutterBottom>
+              점수: {score} / {questions.length}
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={handleRestart}
+              sx={{
+                mt: 2,
+                backgroundColor: '#FFD600',
+                color: '#222',
+                fontWeight: 700,
+                borderRadius: 99,
+                '&:hover': { backgroundColor: '#FFEA70' },
+              }}
+            >
+              다시 시작하기
+            </Button>
+          </Box>
+        ) : (
+          <Box sx={{ width: '100%' }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="textSecondary">
+                문제 {currentQuestion + 1} / {questions.length}
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={((currentQuestion + 1) / questions.length) * 100}
+                sx={{
+                  height: 8,
+                  borderRadius: 4,
+                  mt: 1,
+                  backgroundColor: '#FFF9C4',
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: '#FFD600',
+                  },
+                }}
+              />
+            </Box>
 
-        <Card sx={{ mb: 1, borderRadius: 1 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              sx={{ mb: 2, textAlign: 'left' }}
+            >
               {questions[currentQuestion].question}
             </Typography>
-            <FormControl component="fieldset">
+
+            <FormControl component="fieldset" fullWidth>
               <RadioGroup value={selectedAnswer} onChange={handleAnswerSelect}>
                 {questions[currentQuestion].options.map((option, index) => (
                   <FormControlLabel
                     key={index}
                     value={option}
-                    control={<Radio />}
-                    label={option}
+                    control={<Radio sx={{ display: 'none' }} />}
+                    label={
+                      <Box
+                        sx={{
+                          width: '100%',
+                          border: '1px solid #ddd',
+                          borderRadius: 2,
+                          px: 2,
+                          py: 1.5,
+                          mb: 1.5,
+                          cursor: 'pointer',
+                          backgroundColor: selectedAnswer === option ? '#FFD600' : '#fff',
+                          color: selectedAnswer === option ? '#222' : '#000',
+                          boxShadow: selectedAnswer === option ? 2 : 0,
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            backgroundColor:
+                              selectedAnswer === option ? '#FFEA70' : '#f5f5f5',
+                          },
+                        }}
+                      >
+                        <Typography>
+                          <strong>{String.fromCharCode(65 + index)}.</strong> {option}
+                        </Typography>
+                      </Box>
+                    }
                     disabled={showExplanation}
+                    sx={{ margin: 0 }}
                   />
                 ))}
               </RadioGroup>
             </FormControl>
-          </CardContent>
-        </Card>
 
-        {showExplanation && (
-          <Alert
-            severity={selectedAnswer === questions[currentQuestion].correctAnswer ? 'success' : 'error'}
-            sx={{ mb: 3 }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {selectedAnswer === questions[currentQuestion].correctAnswer ? (
-                <CheckCircleIcon sx={{ mr: 1 }} />
-              ) : (
-                <CancelIcon sx={{ mr: 1 }} />
-              )}
-              <Typography>
-                {selectedAnswer === questions[currentQuestion].correctAnswer ? '정답입니다!' : '틀렸습니다.'}
-              </Typography>
+            {showExplanation && (
+              <Alert
+                severity={
+                  selectedAnswer === questions[currentQuestion].correctAnswer
+                    ? 'success'
+                    : 'error'
+                }
+                sx={{
+                  mt: 2,
+                  borderRadius: 2,
+                  backgroundColor:
+                    selectedAnswer === questions[currentQuestion].correctAnswer
+                      ? '#FFF8B0'
+                      : '#FFE5E5',
+                  color: '#000',
+                  width: '100%',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {selectedAnswer === questions[currentQuestion].correctAnswer ? (
+                    <CheckCircleIcon />
+                  ) : (
+                    <CancelIcon />
+                  )}
+                  <Typography fontWeight="bold">
+                    {selectedAnswer === questions[currentQuestion].correctAnswer
+                      ? '정답입니다!'
+                      : '틀렸습니다.'}
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {questions[currentQuestion].explanation}
+                </Typography>
+              </Alert>
+            )}
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Button
+                variant="contained"
+                onClick={showExplanation ? handleNext : handleSubmit}
+                disabled={!selectedAnswer && !showExplanation}
+                sx={{
+                  backgroundColor: '#FFD600',
+                  color: '#222',
+                  fontWeight: 700,
+                  borderRadius: 99,
+                  py: 1,
+                  px: 4,
+                  '&:hover': { backgroundColor: '#FFEA70' },
+                }}
+              >
+                {showExplanation ? '다음 문제' : '제출하기'}
+              </Button>
             </Box>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              {questions[currentQuestion].explanation}
-            </Typography>
-          </Alert>
+          </Box>
         )}
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          {!showExplanation ? (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSubmit}
-              disabled={!selectedAnswer}
-            >
-              제출하기
-            </Button>
-          ) : (
-            <Button variant="contained" color="primary" onClick={handleNext}>
-              다음 문제
-            </Button>
-          )}
-        </Box>
       </Paper>
-    </Container>
+    </Box>
   );
 }
 
