@@ -1,15 +1,18 @@
+// pages/MemoryGame.jsx
 import { useState, useEffect, useRef } from 'react';
 import {
   Container, Row, Col, Card, Button, Alert, Badge
 } from 'react-bootstrap';
 import { BsClockHistory, BsPatchQuestionFill } from 'react-icons/bs';
 import { cardPairs } from '../utils/cardPairs'; // 카드 데이터 파일
+import { findChildById, updateChild } from '../utils/localData';
 
 function shuffle(array) {
   return [...array].sort(() => Math.random() - 0.5);
 }
 
 function MemoryGame() {
+  const user = JSON.parse(sessionStorage.getItem('user'));
   const [cards, setCards] = useState([]);       // 카드 데이터
   const [flippedCards, setFlippedCards] = useState([]);  // 뒤집어진 카드들
   const [matchedPairs, setMatchedPairs] = useState([]);   // 매칭된 카드 쌍
@@ -17,6 +20,8 @@ function MemoryGame() {
   const [time, setTime] = useState(0);            // 경과 시간
   const timerRef = useRef(null);
   const [showInfo, setShowInfo] = useState(true); // 게임 정보 표시 여부
+  const [rewarded, setRewarded] = useState(false); // 포인트 지급 여부
+  const [reward, setReward] = useState(0); // 지급 포인트
 
   useEffect(() => {
     const shuffled = shuffle(cardPairs).slice(0, 8);  // 카드 데이터 8개 랜덤 추출 (단어와 뜻 각각 다르게)
@@ -48,6 +53,8 @@ function MemoryGame() {
     setFlippedCards([]);
     setGameStarted(false);
     setTime(0);
+    setRewarded(false);
+    setReward(0);
 
     // 3초 후에 게임 시작
     const memoryTimeout = setTimeout(() => {
@@ -102,10 +109,35 @@ function MemoryGame() {
   };
 
   useEffect(() => {
-    if (matchedPairs.length === 8) {
+    if (matchedPairs.length === 8 && !rewarded) {
       stopTimer();
+      // 포인트 지급: 8페어 기준, 시간에 따라 차등 지급(예: 60초 이내 100점, 120초 이내 70점, 그 외 50점)
+      let point = 50;
+      if (time <= 60) point = 100;
+      else if (time <= 120) point = 70;
+      setReward(point);
+      if (user?.role === 'child') {
+        const child = findChildById(user.id);
+        if (child) {
+          const updated = { ...child };
+          updated.points = (updated.points || 0) + point;
+          // 메모리 게임 결과 저장
+          updated.memoryGameResults = [
+            ...(updated.memoryGameResults || []),
+            {
+              id: Date.now(),
+              date: new Date().toISOString().slice(0, 10),
+              points: point,
+              time: time,
+              pairs: matchedPairs.length
+            }
+          ];
+          updateChild(updated);
+        }
+      }
+      setRewarded(true);
     }
-  }, [matchedPairs]);
+  }, [matchedPairs, rewarded, time, user]);
 
   const handleRestart = () => {
     window.location.reload();
@@ -136,7 +168,7 @@ function MemoryGame() {
             <Col xs={3} key={card.id}>
               <Card
                 className={`text-center ${card.flipped || matchedPairs.includes(card.pairId) ? 'bg-success text-white' : 'bg-light'}`}
-                style={{ cursor: 'pointer', height: 100 }}
+                style={{ cursor: 'pointer', height: 100, borderRadius: 16, boxShadow: '0 2px 8px #F5F5F5', fontWeight: 600, fontSize: '1.1rem' }}
                 onClick={() => handleFlip(card)}
               >
                 <Card.Body className="d-flex align-items-center justify-content-center p-2">
@@ -153,6 +185,9 @@ function MemoryGame() {
           <div className="text-center mt-5">
             <h5 className="fw-bold text-success mb-3">🎉 축하합니다!</h5>
             <p>전체 매칭 완료! <Badge bg="info">{time}초</Badge></p>
+            {rewarded && (
+              <Alert variant="success" className="fw-semibold">{reward} 포인트가 지급되었습니다!</Alert>
+            )}
             <Button variant="warning" onClick={handleRestart} className="rounded-pill px-4 fw-bold text-dark">
               🔁 다시 하기
             </Button>

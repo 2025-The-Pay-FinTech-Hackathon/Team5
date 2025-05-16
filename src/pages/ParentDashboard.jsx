@@ -52,6 +52,8 @@ import {
   ListAlt as ListAltIcon,
   Favorite as FavoriteIcon,
   ShoppingCart as ShoppingCartIcon,
+  Chat as ChatIcon,
+  People as PeopleIcon,
 } from '@mui/icons-material';
 import {
   getChildrenByParent,
@@ -62,6 +64,8 @@ import {
   findUserById,
   getDondoliData,
   setDondoliData,
+  deleteChild,
+  deleteUser,
 } from '../utils/localData';
 import ryanCoin from '../../public/ryan-coin.png';
 import { getRecentTransactions } from '../utils/transactionUtils';
@@ -95,6 +99,19 @@ function ParentDashboard() {
   const allLedgers = children.flatMap(child => (child.ledgers || []).map(l => ({ ...l, childName: child.name })))
     .sort((a, b) => (b.date > a.date ? 1 : -1));
   const pagedLedgers = allLedgers.slice(ledgerPage * ledgersPerPage, (ledgerPage + 1) * ledgersPerPage);
+
+  // 대출 정책 상수
+  const getLoanLimit = (creditScore) => creditScore * 1000;
+  const getInterestRate = (creditScore) => {
+    if (creditScore >= 800) return 0.03;
+    if (creditScore >= 700) return 0.05;
+    return 0.08;
+  };
+
+  // 대출 관리 모달 상태
+  const [openLoanDialog, setOpenLoanDialog] = useState(false);
+  const [loanChild, setLoanChild] = useState(null);
+  const [loanActionError, setLoanActionError] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -154,15 +171,27 @@ function ParentDashboard() {
     setAddForm({ name: '', email: '', password: '' });
   };
 
-  // 대출 승인
+  // 대출 승인/거절/상환 정책 적용
   const handleApproveLoan = (request) => {
+    setLoanActionError('');
     const child = children.find(c => c.id === request.childId);
     if (!child) return;
     if (!(child.loanRequests || []).some(r => r.id === request.id)) return;
+    if ((child.creditScore || 700) < 700) {
+      setLoanActionError('신용점수 700점 이상만 대출 승인 가능합니다.');
+      return;
+    }
+    const loanLimit = getLoanLimit(child.creditScore || 700);
+    if (Number(request.amount) > loanLimit) {
+      setLoanActionError(`대출 한도는 ${loanLimit.toLocaleString()}원 입니다.`);
+      return;
+    }
+    const interestRate = getInterestRate(child.creditScore || 700);
+    const period = Number(request.period);
+    const interest = Math.round(request.amount * interestRate * (period / 12));
+    const dueDate = new Date();
+    dueDate.setMonth(dueDate.getMonth() + period);
     const updated = { ...child };
-    const ANNUAL_RATE = 0.05;
-    const days = Number(request.period);
-    const interest = Math.round(request.amount * ANNUAL_RATE * (days / 365));
     updated.loanAmount = (updated.loanAmount || 0) + Number(request.amount);
     updated.creditScore = (updated.creditScore || 700) - 50;
     updated.loans = [
@@ -170,11 +199,11 @@ function ParentDashboard() {
       {
         id: request.id,
         amount: Number(request.amount),
-        interestRate: ANNUAL_RATE,
-        period: request.period,
+        interestRate,
+        period,
         status: 'active',
         approvedAt: new Date().toISOString().slice(0, 10),
-        dueDate: request.dueDate,
+        dueDate: dueDate.toISOString().slice(0, 10),
         repaid: false,
         reason: request.reason,
         interest,
@@ -188,22 +217,49 @@ function ParentDashboard() {
     ];
     updated.loanRequests = (updated.loanRequests || []).filter(r => r.id !== request.id);
     updateChild(updated);
-    const kids = getChildrenByParent(parentId);
-    setChildren(kids);
-    const allLoanRequests = kids.flatMap(child =>
-      (child.loanRequests || []).map(req => ({ ...req, childId: child.id, childName: child.name }))
-    );
-    setLoanRequests(allLoanRequests);
+    setChildren(getChildrenByParent(parentId));
+    setOpenLoanDialog(false);
   };
 
-  // 대출 거절
   const handleRejectLoan = (request) => {
+    setLoanActionError('');
     const child = children.find(c => c.id === request.childId);
     if (!child) return;
     const updated = { ...child };
     updated.loanRequests = (updated.loanRequests || []).filter(r => r.id !== request.id);
+    updated.creditScore = (updated.creditScore || 700) - 10; // 거절 시 신용도 소폭 하락
     updateChild(updated);
     setChildren(getChildrenByParent(parentId));
+    setOpenLoanDialog(false);
+  };
+
+  const handleRepayLoan = (loan, child) => {
+    setLoanActionError('');
+    const today = new Date();
+    const dueDate = loan.dueDate ? new Date(loan.dueDate) : null;
+    let repayAmount = loan.repayAmount || (loan.amount + (loan.interest || 0));
+    let interestSaved = 0;
+    if (dueDate && today < dueDate) {
+      // 조기상환: 이자 50% 감면
+      interestSaved = (loan.interest || 0) * 0.5;
+      repayAmount = loan.amount + (loan.interest || 0) - interestSaved;
+    }
+    if ((child.balance || 0) < repayAmount) {
+      setLoanActionError('잔액이 부족합니다.');
+      return;
+    }
+    const updated = { ...child };
+    updated.balance = (updated.balance || 0) - repayAmount;
+    updated.loanAmount = (updated.loanAmount || 0) - loan.amount;
+    updated.loans = (updated.loans || []).map(l => l.id === loan.id ? { ...l, repaid: true, status: 'repaid', repaidAt: new Date().toISOString().slice(0, 10), interestSaved } : l);
+    updated.creditScore = (updated.creditScore || 600) + 20; // 상환 시 신용도 일부 회복
+    updated.ledgers = [
+      { type: '상환', amount: repayAmount, date: new Date().toISOString().slice(0, 10), memo: '대출 상환' },
+      ...(updated.ledgers || []),
+    ];
+    updateChild(updated);
+    setChildren(getChildrenByParent(parentId));
+    setOpenLoanDialog(false);
   };
 
   // 용돈 보내기
@@ -289,6 +345,9 @@ function ParentDashboard() {
     { icon: <EmojiEventsIcon />, label: '미션 관리', path: '/parent/missions' },
     { icon: <ListAltIcon />, label: '가계부', path: '/parent/ledger' },
     { icon: <FavoriteIcon />, label: '위시리스트', path: '/parent/wishlist' },
+    { icon: <ChatIcon />, label: '메시지', path: '/parent/messages' },
+    { icon: <PeopleIcon />, label: '소셜', path: '/parent/social' },
+    { icon: <AccountBalanceIcon />, label: '용돈 보내기', path: null, onClick: handleOpenSendDialog },
   ];
 
   // 최근 거래 내역: 모든 자녀의 ledgers(가계부), 저축, 용돈 등 합산
@@ -302,6 +361,13 @@ function ParentDashboard() {
       status: '완료',
     }))
   ).sort((a, b) => (b.date > a.date ? 1 : -1));
+
+  // 자녀 삭제 핸들러
+  const handleDeleteChild = (childId) => {
+    deleteChild(childId); // children에서 삭제
+    deleteUser(childId);  // users에서도 삭제
+    setChildren(getChildrenByParent(parentId));
+  };
 
   return (
     <Box sx={{ 
@@ -378,31 +444,23 @@ function ParentDashboard() {
           <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
             빠른 기능
           </Typography>
-          <Grid container spacing={2}>
-            {quickActions.map((action) => (
-              <Grid item xs={6} sm={3} key={action.label}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={action.icon}
-                  onClick={() => navigate(action.path)}
-                  sx={{
-                    py: 2,
-                    bgcolor: '#FFD600',
-                    color: '#222',
-                    '&:hover': {
-                      bgcolor: '#FFE066',
-                    },
-                    fontWeight: 600,
-                    borderRadius: 2,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  }}
-                >
-                  {action.label}
-                </Button>
-              </Grid>
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            {quickActions.map((action, idx) => (
+              <Button
+                key={action.label}
+                variant="contained"
+                color="primary"
+                startIcon={action.icon}
+                onClick={() => {
+                  if (action.onClick) action.onClick();
+                  else if (action.path) navigate(action.path);
+                }}
+                sx={{ fontWeight: 600, bgcolor: '#FFD600', color: '#222', '&:hover': { bgcolor: '#FFE066' } }}
+              >
+                {action.label}
+              </Button>
             ))}
-          </Grid>
+          </Box>
         </Paper>
 
         {/* 자녀 현황 */}
@@ -520,9 +578,7 @@ function ParentDashboard() {
                           startIcon={<DeleteIcon />}
                           onClick={() => {
                             if (window.confirm(`${child.name}님을 삭제하시겠습니까?`)) {
-                              // 삭제 처리
-                              const updatedChildren = children.filter(c => c.id !== child.id);
-                              setChildren(updatedChildren);
+                              handleDeleteChild(child.id);
                               setSnackbar({
                                 open: true,
                                 message: `${child.name}님이 삭제되었습니다.`,
@@ -546,19 +602,17 @@ function ParentDashboard() {
                           variant="contained"
                           startIcon={<AccountBalanceIcon />}
                           onClick={() => {
-                            setSelectedChild(child);
-                            setOpenSendDialog(true);
+                            setLoanChild(child);
+                            setOpenLoanDialog(true);
                           }}
-                          sx={{ 
-                            bgcolor: '#FFD600',
-                            color: '#222',
-                            '&:hover': {
-                              bgcolor: '#FFE066',
-                            },
+                          sx={{
+                            bgcolor: '#40A9FF',
+                            color: '#fff',
+                            '&:hover': { bgcolor: '#1976d2' },
                             fontWeight: 600,
                           }}
                         >
-                          용돈 보내기
+                          대출 관리
                         </Button>
                       </Box>
                     </CardContent>
@@ -751,6 +805,45 @@ function ParentDashboard() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDetailDialog(false)}>닫기</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 대출 관리 모달 */}
+      <Dialog open={openLoanDialog} onClose={() => setOpenLoanDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>대출 관리 - {loanChild?.name}</DialogTitle>
+        <DialogContent>
+          {loanActionError && <Alert severity="error" sx={{ mb: 2 }}>{loanActionError}</Alert>}
+          <Typography variant="subtitle1" sx={{ mb: 1 }}>대출 신청 내역</Typography>
+          {(loanChild?.loanRequests || []).length === 0 ? (
+            <Typography color="text.secondary">대출 신청 내역이 없습니다.</Typography>
+          ) : (
+            (loanChild.loanRequests || []).map((req) => (
+              <Box key={req.id} sx={{ mb: 2, p: 2, border: '1px solid #eee', borderRadius: 2 }}>
+                <Typography>금액: {req.amount.toLocaleString()}원 / 기간: {req.period}개월</Typography>
+                <Typography>사유: {req.reason}</Typography>
+                <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                  <Button size="small" variant="contained" color="success" onClick={() => handleApproveLoan({ ...req, childId: loanChild.id })}>승인</Button>
+                  <Button size="small" variant="contained" color="error" onClick={() => handleRejectLoan({ ...req, childId: loanChild.id })}>거절</Button>
+                </Box>
+              </Box>
+            ))
+          )}
+          <Typography variant="subtitle1" sx={{ mt: 3, mb: 1 }}>진행 중 대출</Typography>
+          {(loanChild?.loans || []).filter(l => l.status === 'active').length === 0 ? (
+            <Typography color="text.secondary">진행 중인 대출이 없습니다.</Typography>
+          ) : (
+            (loanChild.loans || []).filter(l => l.status === 'active').map((loan) => (
+              <Box key={loan.id} sx={{ mb: 2, p: 2, border: '1px solid #eee', borderRadius: 2 }}>
+                <Typography>금액: {loan.amount.toLocaleString()}원 / 이자: {loan.interest.toLocaleString()}원 / 상환액: {loan.repayAmount.toLocaleString()}원</Typography>
+                <Typography>기간: {loan.period}개월 / 만기일: {loan.dueDate}</Typography>
+                <Typography>사유: {loan.reason}</Typography>
+                <Button size="small" variant="contained" color="info" sx={{ mt: 1 }} onClick={() => handleRepayLoan(loan, loanChild)}>상환 처리</Button>
+              </Box>
+            ))
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenLoanDialog(false)}>닫기</Button>
         </DialogActions>
       </Dialog>
 

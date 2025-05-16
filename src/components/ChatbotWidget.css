@@ -1,0 +1,83 @@
+.chatbot-float-btn {
+  position: fixed;
+  right: 32px;
+  bottom: 100px;
+  z-index: 1000;
+  cursor: pointer;
+  animation: float 2s infinite ease-in-out;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0);}
+  50% { transform: translateY(-10px);}
+}
+.float-robot {
+  width: 120px;
+  height: 120px;
+  display: block;
+  margin: auto;
+  box-shadow: 0 4px 16px #0001;
+  outline: 2px solid #FFD60022;
+  border-radius: 50%;
+}
+.chatbot-modal {
+  position: fixed; right: 32px; bottom: 100px; width: 350px; background: #fff;
+  border-radius: 16px; box-shadow: 0 4px 24px #0002; z-index: 1001; display: flex; flex-direction: column;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.chatbot-header { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 1.1rem; }
+.chatbot-body { flex: 1; padding: 16px 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.chat-msg {
+  max-width: 80%;
+  padding: 10px 16px;
+  border-radius: 18px;
+  margin-bottom: 4px;
+  font-size: 1rem;
+  word-break: break-word;
+  display: inline-block;
+}
+.chat-msg.user {
+  align-self: flex-end;
+  background: #ffe16b;
+  color: #222;
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 18px;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  box-shadow: 0 2px 8px #0001;
+  margin-left: 20%;
+}
+.chat-msg.bot {
+  align-self: flex-start;
+  background: #f2f2f2;
+  color: #0077cc;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 18px;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  box-shadow: 0 2px 8px #0001;
+  margin-right: 20%;
+}
+.chatbot-footer { display: flex; border-top: 1px solid #eee; background: #fafafa; border-radius: 0 0 16px 16px; }
+.chatbot-footer input {
+  flex: 1;
+  border: none;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 0 0 0 16px;
+  outline: none;
+  background: #fafafa;
+}
+.chatbot-footer button {
+  border: none;
+  background: #FFD600;
+  color: #222;
+  font-weight: bold;
+  padding: 12px 20px;
+  border-radius: 0 0 16px 0;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.chatbot-footer button:active {
+  background: #ffe16b;
+} 

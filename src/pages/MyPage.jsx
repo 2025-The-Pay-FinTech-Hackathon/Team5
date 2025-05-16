@@ -43,6 +43,7 @@ import {
   Star as StarIcon,
 } from '@mui/icons-material';
 import { findChildById, getChildrenByParent } from '../utils/localData';
+import { BADGE_TYPES } from '../constants/badgeTypes';
 
 const MyPage = () => {
   const navigate = useNavigate();
@@ -80,7 +81,10 @@ const MyPage = () => {
     const userData = JSON.parse(sessionStorage.getItem('user'));
     setUser(userData);
     setEditedUser(userData);
-  }, []);
+    if (userData?.role === 'child') {
+      setChild(findChildById(userData.id));
+    }
+  }, [location.pathname]);
 
   const handleEdit = () => {
     setEditMode(true);
@@ -92,7 +96,6 @@ const MyPage = () => {
   };
 
   const handleSave = () => {
-    // API 호출하여 사용자 정보 업데이트
     sessionStorage.setItem('user', JSON.stringify(editedUser));
     setUser(editedUser);
     setEditMode(false);
@@ -137,7 +140,7 @@ const MyPage = () => {
   const recentQuizzes = (target?.quizResults || [])
     .map(q => ({
       type: '퀴즈',
-      title: q.title || '퀴즈 완료',
+      title: '금융 퀴즈',
       date: q.date,
       points: q.score,
     }));
@@ -149,17 +152,42 @@ const MyPage = () => {
       date: s.lastUpdated,
       points: s.currentAmount,
     }));
-  const recentActivities = [...recentMissions, ...recentQuizzes, ...recentSavings]
+  const recentMemoryGames = (target?.memoryGameResults || [])
+    .map(g => ({
+      type: '메모리게임',
+      title: '카드 매칭 게임',
+      date: g.date,
+      points: g.points,
+    }));
+  const recentActivities = [
+    ...recentMissions,
+    ...recentQuizzes,
+    ...recentSavings,
+    ...recentMemoryGames,
+  ]
     .filter(a => a.date)
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
 
+  // 누적 포인트 계산
+  const totalPointsEarned =
+    (target?.missions || []).reduce((sum, m) => sum + (m.status === '완료' ? Number(m.reward || 0) : 0), 0) +
+    (target?.quizResults || []).reduce((sum, q) => sum + (q.score || 0), 0) +
+    (target?.memoryGameResults || []).reduce((sum, g) => sum + (g.points || 0), 0);
+  const totalPointsUsed = (target?.purchases || []).reduce((sum, p) => sum + (p.points || 0), 0);
+  const currentPoints = target?.points || 0;
+
   const stats = [
+    { icon: <StarIcon />, label: '보유 포인트', value: `${currentPoints.toLocaleString()}점` },
+    { icon: <StarIcon />, label: '누적 획득', value: `${totalPointsEarned.toLocaleString()}점` },
+    { icon: <StarIcon />, label: '누적 사용', value: `${totalPointsUsed.toLocaleString()}점` },
     { icon: <SchoolIcon />, label: '완료한 퀴즈', value: `${quizCount}개` },
     { icon: <EmojiEventsIcon />, label: '완료한 미션', value: `${missionCount}개` },
     { icon: <SavingsIcon />, label: '저축 금액', value: `${savingsAmount.toLocaleString()}원` },
-    { icon: <StarIcon />, label: '획득한 포인트', value: `${points.toLocaleString()}점` },
   ];
+
+  // 뱃지 현황
+  const userBadges = (target?.badges) || {};
 
   return (
     <Box sx={{ 
@@ -227,8 +255,8 @@ const MyPage = () => {
       </Box>
 
       <Container maxWidth="lg">
-        <Grid container spacing={4}>
-          {/* 프로필 정보 */}
+        <Grid container spacing={4} alignItems="stretch">
+          {/* 프로필 카드 (왼쪽) */}
           <Grid item xs={12} md={4}>
             <Paper sx={{ 
               p: 3,
@@ -319,27 +347,28 @@ const MyPage = () => {
             </Paper>
           </Grid>
 
-          {/* 활동 통계 */}
-          <Grid item xs={12} md={8}>
+          {/* 활동 통계 카드 (오른쪽, 2줄 3열) */}
+          <Grid item xs={12} md={8} display="flex" alignItems="center">
             <Paper sx={{ 
               p: 3,
               borderRadius: 2,
               bgcolor: '#fff',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              mb: 4
+              width: '100%',
             }}>
               <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
                 활동 통계
               </Typography>
               <Grid container spacing={3}>
-                {stats.map((stat) => (
-                  <Grid item xs={6} sm={3} key={stat.label}>
+                {stats.map((stat, idx) => (
+                  <Grid item xs={12} sm={6} md={4} key={stat.label || idx}>
                     <Card sx={{ 
                       borderRadius: 2,
                       boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      '&:hover': {
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                      },
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center'
                     }}>
                       <CardContent>
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -364,44 +393,83 @@ const MyPage = () => {
                 ))}
               </Grid>
             </Paper>
-
-            {/* 최근 활동 */}
-            <Paper sx={{ 
-              p: 3,
-              borderRadius: 2,
-              bgcolor: '#fff',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-            }}>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
-                최근 활동
-              </Typography>
-              <List>
-                {recentActivities.length > 0 ? recentActivities.map((activity, index) => (
-                  <React.Fragment key={index}>
-                    <ListItem>
-                      <ListItemIcon>
-                        {activity.type === '퀴즈' ? <SchoolIcon /> : activity.type === '미션' ? <EmojiEventsIcon /> : <SavingsIcon />}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={activity.title}
-                        secondary={activity.date}
-                      />
-                      <Chip
-                        label={`+${activity.points}${activity.type === '저축' ? '원' : '점'}`}
-                        color="primary"
-                        size="small"
-                        sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 600 }}
-                      />
-                    </ListItem>
-                    {index < recentActivities.length - 1 && <Divider />}
-                  </React.Fragment>
-                )) : (
-                  <Typography color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>최근 활동이 없습니다.</Typography>
-                )}
-              </List>
-            </Paper>
           </Grid>
         </Grid>
+
+        {/* 최근 활동 */}
+        <Paper sx={{ 
+          p: 3,
+          borderRadius: 2,
+          bgcolor: '#fff',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          mt: 4
+        }}>
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
+            최근 활동
+          </Typography>
+          <List>
+            {recentActivities.length > 0 ? recentActivities.map((activity, index) => (
+              <React.Fragment key={index}>
+                <ListItem>
+                  <ListItemIcon>
+                    {activity.type === '퀴즈' ? <SchoolIcon /> : activity.type === '미션' ? <EmojiEventsIcon /> : activity.type === '저축' ? <SavingsIcon /> : activity.type === '메모리게임' ? <StarIcon /> : <StarIcon />}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={activity.title}
+                    secondary={activity.date}
+                  />
+                  <Chip
+                    label={`+${activity.points}${activity.type === '저축' ? '원' : '점'}`}
+                    color="primary"
+                    size="small"
+                    sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 600 }}
+                  />
+                </ListItem>
+                {index < recentActivities.length - 1 && <Divider />}
+              </React.Fragment>
+            )) : (
+              <Typography color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>최근 활동이 없습니다.</Typography>
+            )}
+          </List>
+        </Paper>
+
+        {/* 내 뱃지 현황 */}
+        <Paper sx={{ p: 3, my: 4, borderRadius: 2, bgcolor: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
+            내 뱃지
+          </Typography>
+          <Grid container spacing={2}>
+            {BADGE_TYPES.map(badge => {
+              const currentTier = userBadges[badge.key] || null;
+              return (
+                <Grid item xs={12} sm={6} md={4} key={badge.key}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6">{badge.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">{badge.description}</Typography>
+                      <Box sx={{ mt: 2 }}>
+                        {badge.levels.map(level => (
+                          <Chip
+                            key={level.tier}
+                            label={level.label + ' ' + level.condition}
+                            color={currentTier === level.tier ? 'primary' : 'default'}
+                            sx={{ mr: 1, mb: 1 }}
+                            variant={currentTier === level.tier ? 'filled' : 'outlined'}
+                          />
+                        ))}
+                        {!currentTier && (
+                          <Typography variant="body2" sx={{ mt: 1 }} color="text.disabled">
+                            아직 획득한 뱃지가 없어요.
+                          </Typography>
+                        )}
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Paper>
       </Container>
 
       {/* 프로필 수정 다이얼로그 */}
@@ -482,4 +550,4 @@ const MyPage = () => {
   );
 };
 
-export default MyPage; 
+export default MyPage;
