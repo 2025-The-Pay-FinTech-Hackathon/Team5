@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
     }
 
     // 새 유저 생성 후 저장
-    const newUser = new User({ name, email, password, role });
+    const newUser = new User({ name, email, password, role: 'parent' });
     await newUser.save();
 
     res.status(201).json({ message: '회원가입 성공' });

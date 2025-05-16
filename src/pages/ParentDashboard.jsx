@@ -55,9 +55,19 @@ import {
   Chat as ChatIcon,
   People as PeopleIcon,
 } from '@mui/icons-material';
-import { fetchChildrenByParent, createChild,sendAllowance,deleteChild } from '../utils/api';
-
-import ryanCoin from '../assets/ryan-coin.png';
+import {
+  getChildrenByParent,
+  addChild,
+  updateChild,
+  getUsers,
+  saveUsers,
+  findUserById,
+  getDondoliData,
+  setDondoliData,
+  deleteChild,
+  deleteUser,
+} from '../utils/localData';
+import ryanCoin from '../../public/ryan-coin.png';
 import { getRecentTransactions } from '../utils/transactionUtils';
 
 function randomPassword(length = 6) {
@@ -104,64 +114,112 @@ function ParentDashboard() {
   const [loanActionError, setLoanActionError] = useState('');
 
   useEffect(() => {
-  const loadData = async () => {
-    const user = JSON.parse(sessionStorage.getItem('user'));
-    try {
-      const response = await fetchChildrenByParent(user.id);
-      setChildren(response.data);
-    } catch (err) {
-      console.error('자녀 목록 조회 실패:', err);
-    }
-  };
-  loadData();
-}, []);
-
+    const loadData = async () => {
+      const user = JSON.parse(sessionStorage.getItem('user'));
+      const childrenData = await getChildrenByParent(user.id);
+      setChildren(childrenData);
+      
+      const transactions = await getRecentTransactions(user.id);
+      setRecentTransactions(transactions);
+    };
+    loadData();
+  }, []);
 
   useEffect(() => {
-  const reloadChildren = async () => {
-    try {
-      const response = await fetchChildrenByParent(parentId);
-      setChildren(response.data);
-    } catch (err) {
-      console.error('자녀 목록 재조회 실패:', err);
-    }
-  };
-  if (parentId) reloadChildren();
-}, [parentId, location.pathname]);
-
+    setChildren(getChildrenByParent(parentId));
+  }, [parentId, location.pathname]);
 
   // 자녀 추가
-  const handleAddChild = async () => {
-  setError('');
-  if (!addForm.name || !addForm.email || !addForm.password) {
-    setError('이름, 이메일, 비밀번호를 모두 입력해주세요.');
-    return;
-  }
-
-  try {
-    const newChild = {
+  const handleAddChild = () => {
+    setError('');
+    if (!addForm.name || !addForm.email || !addForm.password) {
+      setError('이름, 이메일, 비밀번호를 모두 입력해주세요.');
+      return;
+    }
+    // 자녀 계정도 users에 추가
+    const users = getUsers();
+    if (users.find(u => u.email === addForm.email)) {
+      setError('이미 존재하는 이메일입니다.');
+      return;
+    }
+    const childId = Date.now();
+    const password = addForm.password;
+    addChild({
+      id: childId,
+      name: addForm.name,
+      parentId,
+      balance: 0,
+      creditScore: 700,
+      points: 0,
+      missions: [],
+      savings: [],
+      transactions: [],
+      email: addForm.email,
+      password,
+    });
+    users.push({
+      id: childId,
       name: addForm.name,
       email: addForm.email,
-      password: addForm.password,
+      password,
+      role: 'child',
       parentId,
-    };
-
-    const response = await createChild(newChild);
-    setChildren(prev => [...prev, response.data]); // 자녀 목록에 새 자녀 추가
-    setNewChildInfo({ email: response.data.email, password: response.data.password });
-    setAddForm({ name: '', email: '', password: '' });
-    setOpenAddDialog(false);
-    setSnackbar({
-      open: true,
-      message: '자녀가 추가되었습니다.',
-      severity: 'success',
     });
-  } catch (err) {
-    const msg = err.response?.data?.error || '서버 오류';
-    setError(msg);
-  }
-};
+    saveUsers(users);
+    setChildren(getChildrenByParent(parentId));
+    setNewChildInfo({ email: addForm.email, password });
+    setAddForm({ name: '', email: '', password: '' });
+  };
 
+  // 대출 승인/거절/상환 정책 적용
+  const handleApproveLoan = (request) => {
+    setLoanActionError('');
+    const child = children.find(c => c.id === request.childId);
+    if (!child) return;
+    if (!(child.loanRequests || []).some(r => r.id === request.id)) return;
+    if ((child.creditScore || 700) < 700) {
+      setLoanActionError('신용점수 700점 이상만 대출 승인 가능합니다.');
+      return;
+    }
+    const loanLimit = getLoanLimit(child.creditScore || 700);
+    if (Number(request.amount) > loanLimit) {
+      setLoanActionError(`대출 한도는 ${loanLimit.toLocaleString()}원 입니다.`);
+      return;
+    }
+    const interestRate = getInterestRate(child.creditScore || 700);
+    const period = Number(request.period);
+    const interest = Math.round(request.amount * interestRate * (period / 12));
+    const dueDate = new Date();
+    dueDate.setMonth(dueDate.getMonth() + period);
+    const updated = { ...child };
+    updated.loanAmount = (updated.loanAmount || 0) + Number(request.amount);
+    updated.creditScore = (updated.creditScore || 700) - 50;
+    updated.loans = [
+      ...(updated.loans || []),
+      {
+        id: request.id,
+        amount: Number(request.amount),
+        interestRate,
+        period,
+        status: 'active',
+        approvedAt: new Date().toISOString().slice(0, 10),
+        dueDate: dueDate.toISOString().slice(0, 10),
+        repaid: false,
+        reason: request.reason,
+        interest,
+        repayAmount: Number(request.amount) + interest,
+      },
+    ];
+    updated.balance = (updated.balance || 0) + Number(request.amount);
+    updated.ledgers = [
+      { type: '입금', amount: Number(request.amount), date: new Date().toISOString().slice(0, 10), memo: '대출 승인' },
+      ...(updated.ledgers || []),
+    ];
+    updated.loanRequests = (updated.loanRequests || []).filter(r => r.id !== request.id);
+    updateChild(updated);
+    setChildren(getChildrenByParent(parentId));
+    setOpenLoanDialog(false);
+  };
 
   const handleRejectLoan = (request) => {
     setLoanActionError('');
@@ -205,32 +263,34 @@ function ParentDashboard() {
   };
 
   // 용돈 보내기
-  const handleSendAllowance = async () => {
-  if (!sendAmount || isNaN(sendAmount) || Number(sendAmount) <= 0) return;
-  if (!selectedChild) return;
-
-  try {
-    await sendAllowance(selectedChild._id || selectedChild.id, Number(sendAmount)); // ✅ id 확인
-    setSnackbar({
-      open: true,
-      message: '용돈을 성공적으로 보냈습니다.',
-      severity: 'success',
-    });
+  const handleSendAllowance = () => {
+    if (!sendAmount || isNaN(sendAmount) || Number(sendAmount) <= 0) return;
+    const updated = { ...selectedChild };
+    updated.balance += Number(sendAmount);
+    // 거래내역(ledger) 추가
+    const ledgerEntry = {
+      type: '입금',
+      amount: Number(sendAmount),
+      date: new Date().toISOString().slice(0, 10),
+      memo: '부모 입금',
+      id: Date.now(),
+    };
+    updated.ledgers = [ledgerEntry, ...(updated.ledgers || [])];
+    updateChild(updated);
+    // 거래내역(부모 recentTransactions)에도 push
+    const transactionEntry = {
+      id: Date.now(),
+      childName: updated.name,
+      description: '용돈 입금',
+      amount: Number(sendAmount),
+      date: new Date().toISOString(),
+      status: '완료',
+    };
+    setChildren(getChildrenByParent(parentId));
+    setRecentTransactions(prev => [transactionEntry, ...prev]);
     setOpenSendDialog(false);
     setSendAmount('');
-    // 목록 갱신
-    const response = await fetchChildrenByParent(parentId);
-    setChildren(response.data);
-  } catch (err) {
-    const msg = err.response?.data?.error || '서버 오류';
-    setSnackbar({
-      open: true,
-      message: msg,
-      severity: 'error',
-    });
-  }
-};
-
+  };
 
   // 상세보기
   const handleOpenDetail = (child) => {
@@ -303,29 +363,11 @@ function ParentDashboard() {
   ).sort((a, b) => (b.date > a.date ? 1 : -1));
 
   // 자녀 삭제 핸들러
-  const handleDeleteChild = async (childId) => {
-  try {
-    await deleteChild(childId);
-
-    // ✅ 삭제 후 최신 목록 재조회
-    const response = await fetchChildrenByParent(parentId);
-    setChildren(response.data);
-
-    setSnackbar({
-      open: true,
-      message: '자녀가 삭제되었습니다.',
-      severity: 'success',
-    });
-  } catch (err) {
-    const msg = err.response?.data?.error || '삭제 실패';
-    setSnackbar({
-      open: true,
-      message: msg,
-      severity: 'error',
-    });
-  }
-};
-
+  const handleDeleteChild = (childId) => {
+    deleteChild(childId); // children에서 삭제
+    deleteUser(childId);  // users에서도 삭제
+    setChildren(getChildrenByParent(parentId));
+  };
 
   return (
     <Box sx={{ 
@@ -536,7 +578,7 @@ function ParentDashboard() {
                           startIcon={<DeleteIcon />}
                           onClick={() => {
                             if (window.confirm(`${child.name}님을 삭제하시겠습니까?`)) {
-                              handleDeleteChild(child._id || child.id);
+                              handleDeleteChild(child.id);
                               setSnackbar({
                                 open: true,
                                 message: `${child.name}님이 삭제되었습니다.`,
@@ -684,25 +726,22 @@ function ParentDashboard() {
         <DialogTitle>용돈 보내기</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2 }}>
-
             <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel>자녀 선택</InputLabel>
               <Select
-  value={selectedChild ? String(selectedChild._id || selectedChild.id) : ''}
-  onChange={(e) => {
-    const selectedId = e.target.value;
-    const child = children.find(c => String(c._id || c.id) === selectedId);
-    setSelectedChild(child);
-  }}
-  label="자녀 선택"
->
-  {children.map((child) => (
-    <MenuItem key={child._id || child.id} value={String(child._id || child.id)}>
-      {child.name}
-    </MenuItem>
-  ))}
-</Select>
-
+                value={selectedChild?.id || ''}
+                onChange={(e) => {
+                  const child = children.find(c => c.id === e.target.value);
+                  setSelectedChild(child);
+                }}
+                label="자녀 선택"
+              >
+                {children.map((child) => (
+                  <MenuItem key={child.id} value={child.id}>
+                    {child.name}
+                  </MenuItem>
+                ))}
+              </Select>
             </FormControl>
             <TextField
               fullWidth

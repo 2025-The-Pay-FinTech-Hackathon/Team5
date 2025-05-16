@@ -19,6 +19,11 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/children', childrenRoutes);
+app.use('/api/quiz', require('./routes/quiz'));
+app.use('/api/memory', require('./routes/memory'));
+app.use('/api/savings', require('./routes/savings'));
+app.use('/api/wishlist', require('./routes/wishlist'));
+app.use('/api/store', require('./routes/store'));
 
 // MongoDB 연결
 mongoose.connect(MONGO_URI)

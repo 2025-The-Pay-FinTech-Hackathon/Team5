@@ -15,20 +15,23 @@ router.get('/parent/:parentId', async (req, res) => {
 });
 
 
-// POST /api/children - 자녀 추가
+// POST /api/children - 자녀 추가 및 로그인 가능하게 User에도 등록
 router.post('/', async (req, res) => {
-    const { name, email, password, parentId } = req.body;
+  const { name, email, password, parentId } = req.body;
 
   if (!name || !email || !password || !parentId) {
     return res.status(400).json({ error: '모든 항목을 입력해주세요.' });
   }
 
   try {
-    const existing = await Child.findOne({ email });
-    if (existing) {
+    // 이메일 중복 검사 (Child + User 모델 모두 확인)
+    const existingChild = await Child.findOne({ email });
+    const existingUser = await User.findOne({ email });
+    if (existingChild || existingUser) {
       return res.status(409).json({ error: '이미 존재하는 이메일입니다.' });
     }
 
+    // 1. Child 모델에 자녀 정보 저장
     const newChild = new Child({
       name,
       email,
@@ -44,9 +47,19 @@ router.post('/', async (req, res) => {
       loans: [],
       loanRequests: [],
     });
-
     await newChild.save();
-    res.status(201).json(newChild);
+
+    // 2. User 모델에도 자녀 등록 (로그인 가능하게)
+    const newUser = new User({
+      name,
+      email,
+      password,
+      role: 'child',
+      parentId: parentId || req.body.parentId,
+    });
+    await newUser.save();
+
+    res.status(201).json({ message: '자녀가 성공적으로 등록되었습니다.', child: newChild });
   } catch (err) {
     console.error('자녀 추가 실패:', err);
     res.status(500).json({ error: '서버 오류' });
@@ -101,18 +114,19 @@ router.get('/:childId', async (req, res) => {
   }
 });
 
-// DELETE /api/children/:childId - 자녀 삭제
-// DELETE /api/children/:childId - 자녀 삭제
-router.delete('/:childId', async (req, res) => {
-  const { childId } = req.params;
-
+// ✅ 자녀 삭제 라우터 (Child + User 동시에 삭제)
+router.delete('/:id', async (req, res) => {
   try {
-    await Child.findByIdAndDelete(childId);
-    await User.findByIdAndDelete(childId); // child 계정도 users에서 삭제
-    res.json({ message: '자녀가 삭제되었습니다.' });
+    const child = await Child.findByIdAndDelete(req.params.id);
+    if (!child) return res.status(404).json({ error: '자녀를 찾을 수 없습니다.' });
+
+    // User 컬렉션에서 자녀 정보도 함께 삭제
+    await User.findOneAndDelete({ email: child.email, role: 'child' });
+
+    res.json({ message: '자녀 삭제 완료' });
   } catch (err) {
     console.error('자녀 삭제 실패:', err);
-    res.status(500).json({ error: '서버 오류' });
+    res.status(500).json({ error: '삭제 중 오류 발생' });
   }
 });
 
