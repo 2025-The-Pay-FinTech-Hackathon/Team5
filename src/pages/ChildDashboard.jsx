@@ -335,16 +335,17 @@ const ChildDashboard = () => {
             안녕하세요, {user?.name}님!
           </Typography>
           <Typography
-            variant="h6"
-            sx={{
-              color: '#666',
-              fontWeight: 500,
-              zIndex: 2,
-              position: 'relative',
-            }}
-          >
-            오늘도 금융 습관을 키워봐요
-          </Typography>
+  variant="h6"
+  sx={{
+    color: '#000', // 검정색으로 설정
+    fontWeight: 500,
+    zIndex: 2,
+    position: 'relative',
+  }}
+>
+  오늘도 금융 습관을 키워봐요
+</Typography>
+
         </Container>
         {/* 라이언 이미지 */}
         <Box
@@ -372,137 +373,230 @@ const ChildDashboard = () => {
           mb: 4,
           borderRadius: 2,
           bgcolor: '#fff',
+          
           boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         }}>
           <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
             빠른 기능
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            {quickActions.map((action, idx) => (
-              <Button
-                key={action.label}
-                variant="contained"
-                color="primary"
-                startIcon={action.icon}
-                onClick={e => {
-                  e.preventDefault();
-                  action.onClick();
-                }}
-                sx={{ fontWeight: 600, bgcolor: '#FFD600', color: '#222', '&:hover': { bgcolor: '#FFE066' } }}
-              >
-                {action.label}
-              </Button>
-            ))}
-          </Box>
-        </Paper>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+  {quickActions.map((action, idx) => (
+    <Button
+      key={action.label}
+      variant="contained"
+      color="primary"
+      startIcon={action.icon}
+      onClick={e => {
+        e.preventDefault();
+        action.onClick();
+      }}
+      sx={{
+        fontWeight: 600,
+        bgcolor: '#FFD600',
+        color: '#222',
+        '&:hover': { bgcolor: '#FFE066' },
 
-        {/* 나의 현황 */}
-        <Paper sx={{ 
-          p: 3, 
-          mb: 4,
-          borderRadius: 2,
-          bgcolor: '#fff',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-        }}>
-          <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
-            나의 현황
-          </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ borderRadius: 3, boxShadow: '0 4px 16px #F5F5F5', bgcolor: '#FFF', border: '1px solid #F5F5F5' }}>
-                <CardContent>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-                    신용/잔액
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-                    <Chip label={`신용점수: ${creditScore}`} sx={{ bgcolor: '#40A9FF', color: '#fff', fontWeight: 600, borderRadius: 2, boxShadow: '0 2px 8px #F5F5F5' }} icon={<StarIcon sx={{ color: '#40A9FF' }} />} />
-                    <Chip label={`잔액: ${balance.toLocaleString()}원`} sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 600, borderRadius: 2, boxShadow: '0 2px 8px #F5F5F5' }} icon={<AccountBalanceIcon sx={{ color: '#FFD600' }} />} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ borderRadius: 3, boxShadow: '0 4px 16px #F5F5F5', bgcolor: '#FFF', border: '1px solid #F5F5F5' }}>
-                <CardContent>
-                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-                    포인트 현황
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-                    <Chip label={`보유: ${currentPoints.toLocaleString()}점`} sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 600, borderRadius: 2, boxShadow: '0 2px 8px #F5F5F5' }} icon={<StarIcon sx={{ color: '#FFD600' }} />} />
-                    <Chip label={`누적 획득: ${totalPointsEarned}점`} sx={{ bgcolor: '#FF9800', color: '#fff', fontWeight: 600, borderRadius: 2, boxShadow: '0 2px 8px #F5F5F5' }} icon={<StarIcon sx={{ color: '#FF9800' }} />} />
-                    <Chip label={`사용: ${totalPointsUsed}점`} sx={{ bgcolor: '#FFB6B6', color: '#222', fontWeight: 600, borderRadius: 2, boxShadow: '0 2px 8px #F5F5F5' }} icon={<ShoppingCartIcon sx={{ color: '#FFB6B6' }} />} />
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  {/* 저축 현황 카드 */}
-                  <Card sx={{ borderRadius: 3, boxShadow: '0 4px 16px #F5F5F5', bgcolor: '#FFF', border: '1px solid #F5F5F5' }}>
-                    <CardContent>
-                      <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-                        저축 현황
-                      </Typography>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          목표 금액: {savingsGoal.toLocaleString()}원
-                        </Typography>
-                        <LinearProgress 
-                          variant="determinate" 
-                          value={savingsGoal > 0 ? (currentSavings / savingsGoal) * 100 : 0}
-                          sx={{ height: 10, borderRadius: 5, bgcolor: '#FFF9C4', '& .MuiLinearProgress-bar': { bgcolor: '#FFD600' } }}
-                        />
-                        <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-                          현재 저축액: {currentSavings.toLocaleString()}원
-                        </Typography>
-                      </Box>
-                      <Button
-                        variant="contained"
-                        startIcon={<SavingsIcon />}
-                        onClick={() => navigate('/child/savings')}
-                        sx={{ bgcolor: '#FFD600', color: '#222', '&:hover': { bgcolor: '#FFE066' }, fontWeight: 600, borderRadius: 2 }}
-                      >
-                        저축하기
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12}>
-                  {/* 미션 현황 카드 */}
-                  <Card sx={{ borderRadius: 3, boxShadow: '0 4px 16px #F5F5F5', bgcolor: '#FFF', border: '1px solid #F5F5F5' }}>
-                    <CardContent>
-                      <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-                        미션 현황
-                      </Typography>
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          완료한 미션: {completedMissions}개
-                        </Typography>
-                        <LinearProgress 
-                          variant="determinate" 
-                          value={totalMissions > 0 ? (completedMissions / totalMissions) * 100 : 0}
-                          sx={{ height: 10, borderRadius: 5, bgcolor: '#FFF9C4', '& .MuiLinearProgress-bar': { bgcolor: '#FFD600' } }}
-                        />
-                        <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-                          남은 미션: {totalMissions - completedMissions}개
-                        </Typography>
-                      </Box>
-                      <Button
-                        variant="contained"
-                        startIcon={<EmojiEventsIcon />}
-                        onClick={() => navigate('/child/missions')}
-                        sx={{ bgcolor: '#FFD600', color: '#222', '&:hover': { bgcolor: '#FFE066' }, fontWeight: 600, borderRadius: 2 }}
-                      >
-                        미션 보기
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
+      }}
+    >
+      {action.label}
+    </Button>
+  ))}
+</Box>
         </Paper>
+<Paper
+  sx={{
+    p: 2,
+    mb: 4,
+    borderRadius: 3,
+    bgcolor: '#fff',
+    boxShadow: '0 6px 24px rgba(0, 0, 0, 0.08)',
+  }}
+>
+  <Typography
+    variant="h5"
+    sx={{
+      mb: 3,
+      fontWeight: 700,
+      textAlign: 'center',
+      color: '#333',
+    }}
+  >
+    나의 현황
+  </Typography>
+
+  <Box
+    sx={{
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: 2,
+      px: 1.5, // 양옆 여백 살짝만 주기
+    }}
+  >
+    {[ 
+      {
+        title: '신용/잔액',
+     chips: [
+  {
+    label: `신용점수: ${creditScore}`,
+    icon: <StarIcon sx={{ color: '#fff' }} />,
+    sx: { bgcolor: '#FF9800', color: '#fff' }, // 주황톤 칩
+  },
+  {
+    label: `잔액: ${balance.toLocaleString()}원`,
+    icon: <AccountBalanceIcon sx={{ color: '#fff' }} />,
+    sx: { bgcolor: '#FACC15', color: '#222' }, // 메인 노랑
+  },
+],
+      },
+      {
+        title: '포인트 현황',
+        chips: [
+          {
+            label: `보유: ${currentPoints.toLocaleString()}점`,
+            icon: <StarIcon sx={{ color: '#fff' }} />,
+            sx: { bgcolor: '#FFD600', color: '#222' },
+          },
+          {
+            label: `누적 획득: ${totalPointsEarned}점`,
+            icon: <StarIcon sx={{ color: '#fff' }} />,
+            sx: { bgcolor: '#FF9800', color: '#fff' },
+          },
+          {
+            label: `사용: ${totalPointsUsed}점`,
+            icon: <ShoppingCartIcon sx={{ color: '#fff' }} />,
+            sx: { bgcolor: '#FFB6B6', color: '#222' },
+          },
+        ],
+      },
+      {
+        title: '저축 현황',
+        extra: (
+          <>
+            <Typography variant="body2" color="text.secondary">
+              목표 금액: {savingsGoal.toLocaleString()}원
+            </Typography>
+            <LinearProgress
+              variant="determinate"
+              value={savingsGoal > 0 ? (currentSavings / savingsGoal) * 100 : 0}
+              sx={{
+                height: 10,
+                borderRadius: 5,
+                mt: 1,
+                bgcolor: '#F5F5F5',
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: '#FFD600',
+                },
+              }}
+            />
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 600, color: '#444' }}>
+              현재 저축액: {currentSavings.toLocaleString()}원
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<SavingsIcon />}
+              onClick={() => navigate('/child/savings')}
+              sx={{
+                mt: 2,
+                bgcolor: '#FFD600',
+                color: '#222',
+                '&:hover': { bgcolor: '#FFE066' },
+                fontWeight: 600,
+                borderRadius: 2,
+              }}
+            >
+              저축하기
+            </Button>
+          </>
+        ),
+      },
+      {
+        title: '미션 현황',
+        extra: (
+          <>
+            <Typography variant="body2" color="text.secondary">
+              완료한 미션: {completedMissions}개
+            </Typography>
+            <LinearProgress
+              variant="determinate"
+              value={totalMissions > 0 ? (completedMissions / totalMissions) * 100 : 0}
+              sx={{
+                height: 10,
+                borderRadius: 5,
+                mt: 1,
+                bgcolor: '#F5F5F5',
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: '#FFD600',
+                },
+              }}
+            />
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 600, color: '#444' }}>
+              남은 미션: {totalMissions - completedMissions}개
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<EmojiEventsIcon />}
+              onClick={() => navigate('/child/missions')}
+              sx={{
+                mt: 2,
+                bgcolor: '#FFD600',
+                color: '#222',
+                '&:hover': { bgcolor: '#FFE066' },
+                fontWeight: 600,
+                borderRadius: 2,
+              }}
+            >
+              미션 보기
+            </Button>
+          </>
+        ),
+      },
+    ].map((card, index) => (
+      <Card
+        key={index}
+        sx={{
+          flex: '1 1 260px',
+          maxWidth: 360,
+          minWidth: 240,
+          display: 'flex',
+          flexDirection: 'column',
+          bgcolor: '#fff',
+          borderRadius: 3,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          p: 2,
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.12)',
+          },
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 700, color: '#333', mb: 1 }}>
+          {card.title}
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {card.chips?.map((chip, i) => (
+            <Chip
+              key={i}
+              label={chip.label}
+              icon={chip.icon}
+              sx={{
+                ...chip.sx,
+                fontWeight: 600,
+                borderRadius: 2,
+                px: 1.5,
+                py: 0.5,
+              }}
+            />
+          ))}
+          {card.extra}
+        </Box>
+      </Card>
+    ))}
+  </Box>
+</Paper>
+
+
 
         {/* 최근 활동 */}
         <Paper sx={{ 
@@ -543,7 +637,7 @@ const ChildDashboard = () => {
                     </TableCell>
                     <TableCell>{activity.title}</TableCell>
                     <TableCell sx={{ 
-                      color: '#FFD600',
+                      color: '#FF9800',
                       fontWeight: 600
                     }}>
                       +{activity.points.toLocaleString()}점
@@ -660,12 +754,16 @@ const ChildDashboard = () => {
                       {transaction.amount.toLocaleString()}원
                     </TableCell>
                     <TableCell>
-                      <Chip
-                        label={transaction.status}
-                        color={transaction.status === '완료' ? 'success' : 'warning'}
-                        size="small"
-                        sx={{ fontWeight: 600 }}
-                      />
+<Chip
+  label={transaction.status}
+  size="small"
+  sx={{
+    fontWeight: 600,
+    bgcolor: transaction.status === '완료' ? '#066D1F' : '#FFF3CD',
+    color: transaction.status === '완료' ? '#fff' : '#664D03',
+  }}
+/>
+
                     </TableCell>
                   </TableRow>
                 ))}
