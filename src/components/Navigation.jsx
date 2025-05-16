@@ -107,8 +107,8 @@ function Navigation({ user, onLogout }) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            MwoniMoney
+          <Typography variant="h6" noWrap component="div">
+            Dondoli
           </Typography>
           <Typography variant="body1" sx={{ mr: 2 }}>
             {user?.name}님

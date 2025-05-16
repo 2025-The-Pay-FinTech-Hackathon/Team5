@@ -1,9 +1,9 @@
-// Local data utility for MwoniMoney (JSON 파일 기반)
-import mwoniData from '../data/mwoniData.json';
+// Local data utility for Dondoli (JSON 파일 기반)
+import dondoliData from '../data/dondoliData.json';
 
 // User management
 export function getUsers() {
-  return JSON.parse(localStorage.getItem('users')) || mwoniData.users || [];
+  return JSON.parse(localStorage.getItem('users')) || dondoliData.users || [];
 }
 
 export function saveUsers(users) {
@@ -40,7 +40,7 @@ export function findUserById(id) {
 
 // Child management
 export function getChildren() {
-  return JSON.parse(localStorage.getItem('children')) || mwoniData.children || [];
+  return JSON.parse(localStorage.getItem('children')) || dondoliData.children || [];
 }
 
 export function saveChildren(children) {
@@ -76,14 +76,11 @@ export function getChildrenByParent(parentId) {
 }
 
 // Data management (for backup/restore, not used in main flow)
-export function getMwoniData() {
-  return {
-    users: getUsers(),
-    children: getChildren(),
-  };
+export function getDondoliData() {
+  return dondoliData;
 }
 
-export function setMwoniData(data) {
+export function setDondoliData(data) {
   if (data.users) saveUsers(data.users);
   if (data.children) saveChildren(data.children);
 }

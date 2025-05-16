@@ -1,6 +1,6 @@
-# MwoniMoney - 부모-자녀 금융 교육 앱
+# Dondoli - 부모-자녀 금융 교육 앱
 
-MwoniMoney는 부모와 자녀가 함께 사용할 수 있는 금융 교육 앱입니다. 부모는 자녀의 금융 활동을 관리하고 교육할 수 있으며, 자녀는 재미있는 방식으로 금융 지식을 습득할 수 있습니다.
+Dondoli는 부모와 자녀가 함께 사용할 수 있는 금융 교육 앱입니다. 부모는 자녀의 금융 활동을 관리하고 교육할 수 있으며, 자녀는 재미있는 방식으로 금융 지식을 습득할 수 있습니다.
 
 ## 주요 기능
 
@@ -36,8 +36,8 @@ MwoniMoney는 부모와 자녀가 함께 사용할 수 있는 금융 교육 앱�
 ### 설치
 1. 저장소 클론
 ```bash
-git clone https://github.com/yourusername/mwoni-prototype.git
-cd mwoni-prototype
+git clone https://github.com/yourusername/dondoli.git
+cd dondoli
 ```
 
 2. 의존성 설치

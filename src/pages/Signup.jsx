@@ -9,6 +9,8 @@ import {
   Tabs,
   Tab,
   Alert,
+  Grid,
+  Link,
 } from '@mui/material';
 import { addUser, findUserByEmail } from '../utils/localData';
 
@@ -65,86 +67,136 @@ function Signup() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        minWidth: '100vw',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#F8F8FF',
-      }}
-    >
-      <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 400, mx: 'auto' }}>
-        <Typography variant="h4" component="h1" align="center" gutterBottom>
-          회원가입
-        </Typography>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-          <Tabs value={accountType} onChange={handleAccountTypeChange} centered>
-            <Tab label="부모 계정" value="parent" />
-            <Tab label="자녀 계정" value="child" />
-          </Tabs>
-        </Box>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>
-        )}
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="이름"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            label="이메일"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            label="비밀번호"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            label="비밀번호 확인"
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleInputChange}
-            margin="normal"
-            required
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            sx={{ mt: 3 }}
-          >
-            회원가입
-          </Button>
-        </form>
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Button color="primary" onClick={() => navigate('/')}>이미 계정이 있으신가요? 로그인</Button>
-        </Box>
-      </Paper>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#F8F8FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Grid container sx={{ minHeight: { xs: '100vh', md: 600 }, maxWidth: 1100, boxShadow: 3, borderRadius: 5, overflow: 'hidden' }}>
+        {/* Left: Signup Form */}
+        <Grid item xs={12} md={7} sx={{ bgcolor: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', py: 6, px: { xs: 2, md: 6 } }}>
+          <Box sx={{ width: '100%', maxWidth: 360 }}>
+            <Typography variant="h3" fontWeight={700} sx={{ mb: 4, color: '#222' }}>
+              회원가입
+            </Typography>
+            <Paper elevation={0} sx={{ p: 4, borderRadius: 3, boxShadow: '0 2px 16px 0 rgba(0,0,0,0.06)' }}>
+              <Tabs
+                value={accountType}
+                onChange={handleAccountTypeChange}
+                variant="fullWidth"
+                sx={{ mb: 3, '& .MuiTabs-indicator': { backgroundColor: '#FFD600' } }}
+              >
+                <Tab label="부모 계정" value="parent" sx={{ fontWeight: 700, color: accountType === 'parent' ? '#222' : '#888', '&.Mui-selected': { color: '#222' } }} />
+                <Tab label="자녀 계정" value="child" sx={{ fontWeight: 700, color: accountType === 'child' ? '#222' : '#888', '&.Mui-selected': { color: '#222' } }} />
+              </Tabs>
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+              )}
+              {success && (
+                <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>
+              )}
+              <form onSubmit={handleSubmit}>
+                <TextField
+                  fullWidth
+                  label="이름"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  margin="normal"
+                  required
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  label="이메일"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  margin="normal"
+                  required
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  label="비밀번호"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  margin="normal"
+                  required
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  fullWidth
+                  label="비밀번호 확인"
+                  name="confirmPassword"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  margin="normal"
+                  required
+                  sx={{ mb: 3 }}
+                />
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  sx={{
+                    background: '#FFD600',
+                    color: '#222',
+                    fontWeight: 700,
+                    borderRadius: 99,
+                    boxShadow: 'none',
+                    py: 1.5,
+                    fontSize: 18,
+                    mb: 1.5,
+                    '&:hover': { background: '#FFEA70' },
+                  }}
+                >
+                  회원가입
+                </Button>
+              </form>
+              <Box sx={{ textAlign: 'center', mt: 1 }}>
+                <Link component="button" underline="hover" color="inherit" onClick={() => navigate('/')} sx={{ fontSize: 14 }}>
+                  이미 계정이 있으신가요? 로그인
+                </Link>
+              </Box>
+            </Paper>
+            <Box sx={{ mt: 4, textAlign: 'center', color: '#888', fontSize: 13 }}>
+              <Link href="#" underline="hover" sx={{ color: '#888', mr: 1 }}>
+                이용약관
+              </Link>
+              |
+              <Link href="#" underline="hover" sx={{ color: '#888', ml: 1 }}>
+                개인정보처리방침
+              </Link>
+            </Box>
+          </Box>
+        </Grid>
+        {/* Right: Illustration & Branding */}
+        <Grid item xs={12} md={5} sx={{ bgcolor: '#FFD600', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', py: 6 }}>
+          <Box sx={{
+            width: 220,
+            height: 220,
+            bgcolor: '#FFEB3B',
+            borderRadius: 6,
+            mb: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: 6
+          }}>
+            <Typography variant="h1" sx={{ color: '#FFD600', fontWeight: 900, fontSize: 100 }}>
+              ₩
+            </Typography>
+          </Box>
+          <Typography variant="h3" fontWeight={700} sx={{ color: '#222', mb: 1 }}>
+            Dondoli
+          </Typography>
+          <Typography variant="h6" sx={{ color: '#222', opacity: 0.8 }}>
+            부모-자녀 금융 교육
+          </Typography>
+        </Grid>
+      </Grid>
     </Box>
   );
 }

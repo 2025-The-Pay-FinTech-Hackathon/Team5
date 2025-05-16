@@ -40,8 +40,8 @@ import {
   getUsers,
   saveUsers,
   findUserById,
-  getMwoniData,
-  setMwoniData,
+  getDondoliData,
+  setDondoliData,
 } from '../utils/localData';
 
 function randomPassword(length = 6) {
@@ -212,31 +212,26 @@ function ParentDashboard() {
 
   // 데이터 내보내기
   const handleExport = () => {
-    const data = getMwoniData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+    const data = getDondoliData();
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'mwoniData.json';
+    a.href = URL.createObjectURL(blob);
+    a.download = 'dondoliData.json';
     a.click();
-    URL.revokeObjectURL(url);
   };
 
   // 데이터 불러오기
-  const handleImport = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const json = JSON.parse(event.target.result);
-        setMwoniData(json);
-        window.location.reload();
-      } catch (err) {
-        alert('잘못된 JSON 파일입니다.');
-      }
-    };
-    reader.readAsText(file);
+  const handleImport = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const json = JSON.parse(e.target.result);
+        setDondoliData(json);
+      };
+      reader.readAsText(file);
+    }
   };
 
   return (

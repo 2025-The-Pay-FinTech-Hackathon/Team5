@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline, GlobalStyles } from '@mui/material';
 import { useState } from 'react';
+import lottie from 'lottie-web';
+import { defineElement } from 'lord-icon-element';
 
 // Components
 import Navigation from './components/Navigation';
