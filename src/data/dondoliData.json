@@ -1,0 +1,9 @@
+{
+  "users": [
+    { "id": 1, "name": "부모", "email": "parent@test.com", "password": "1234", "role": "parent" },
+    { "id": 2, "name": "자녀", "email": "child@test.com", "password": "1234", "role": "child", "parentId": 1 }
+  ],
+  "children": [
+    { "id": 2, "name": "자녀", "parentId": 1, "missions": [], "savings": [], "ledgers": [], "wishlist": [] }
+  ]
+} 
