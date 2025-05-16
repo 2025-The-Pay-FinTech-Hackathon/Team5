@@ -1,22 +1,6 @@
-import { useState } from 'react';
-import { findChildById, updateChild } from '../utils/localData';
-import { checkAndUpdateBadges } from '../utils/badgeUtils';
-import {
-  Paper,
-  Typography,
-  Box,
-  Button,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  FormControl,
-  LinearProgress,
-  Alert,
-} from '@mui/material';
-import {
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-} from '@mui/icons-material';
+import React, { useState } from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 function Quiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -24,9 +8,6 @@ function Quiz() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState(0);
   const [quizCompleted, setQuizCompleted] = useState(false);
-
-  const user = JSON.parse(sessionStorage.getItem('user'));
-  const [child, setChild] = useState(user?.role === 'child' ? findChildById(user.id) : null);
 
   const questions = [
     {
@@ -43,27 +24,13 @@ function Quiz() {
     },
   ];
 
-  const handleAnswerSelect = (event) => setSelectedAnswer(event.target.value);
+  const handleAnswerSelect = (value) => {
+    setSelectedAnswer(value);
+  };
 
   const handleSubmit = () => {
     const isCorrect = selectedAnswer === questions[currentQuestion].correctAnswer;
     if (isCorrect) setScore(score + 1);
-
-    if (child) {
-      const updated = { ...child };
-      updated.quizzes = [
-        ...(child.quizzes || []),
-        {
-          id: Date.now(),
-          isCorrect,
-          answeredAt: new Date().toISOString().slice(0, 10),
-        },
-      ];
-      updateChild(updated);
-      setChild(updated);
-      checkAndUpdateBadges(updated);
-    }
-
     setShowExplanation(true);
   };
 
@@ -86,183 +53,76 @@ function Quiz() {
   };
 
   return (
-    <Box
-      sx={{
-        backgroundColor: '#f9f9f9',
-        minHeight: '100vh',
-        width: '100vw',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        px: 2,
-        py: 4,
-      }}
-    >
-      <Paper
-        sx={{
-          width: '100%',
-          maxWidth: 960,
-          minHeight: 500,
-          mx: 'auto', // 수평 정렬 강제
-          p: 4,
-          borderRadius: 4,
-          backgroundColor: '#fff',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        {quizCompleted ? (
-          <Box sx={{ textAlign: 'center', width: '100%' }}>
-            <Typography variant="h4" gutterBottom>
-              퀴즈 완료!
-            </Typography>
-            <Typography variant="h5" sx={{ color: '#FFD600' }} gutterBottom>
-              점수: {score} / {questions.length}
-            </Typography>
-            <Button
-              variant="contained"
-              onClick={handleRestart}
-              sx={{
-                mt: 2,
-                backgroundColor: '#FFD600',
-                color: '#222',
-                fontWeight: 700,
-                borderRadius: 99,
-                '&:hover': { backgroundColor: '#FFEA70' },
-              }}
-            >
-              다시 시작하기
-            </Button>
-          </Box>
-        ) : (
-          <Box sx={{ width: '100%' }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="textSecondary">
-                문제 {currentQuestion + 1} / {questions.length}
-              </Typography>
-              <LinearProgress
-                variant="determinate"
-                value={((currentQuestion + 1) / questions.length) * 100}
-                sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  mt: 1,
-                  backgroundColor: '#FFF9C4',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#FFD600',
-                  },
-                }}
-              />
-            </Box>
+    <div className="container-fluid bg-light min-vh-100 d-flex justify-content-center align-items-center py-5">
+      <div className="card shadow-lg w-100" style={{ maxWidth: 700 }}>
+        <div className="card-body">
+          {quizCompleted ? (
+            <div className="text-center">
+              <h2 className="mb-3">퀴즈 완료!</h2>
+              <h4 className="text-warning mb-4">점수: {score} / {questions.length}</h4>
+              <button className="btn btn-warning fw-bold rounded-pill px-4" onClick={handleRestart}>
+                다시 시작하기
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Progress */}
+              <div className="mb-3">
+                <small className="text-muted">문제 {currentQuestion + 1} / {questions.length}</small>
+                <div className="progress mt-1" style={{ height: 10 }}>
+                  <div
+                    className="progress-bar bg-warning"
+                    role="progressbar"
+                    style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
 
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              sx={{ mb: 2, textAlign: 'left' }}
-            >
-              {questions[currentQuestion].question}
-            </Typography>
+              {/* 질문 */}
+              <h5 className="fw-bold mb-3">{questions[currentQuestion].question}</h5>
 
-            <FormControl component="fieldset" fullWidth>
-              <RadioGroup value={selectedAnswer} onChange={handleAnswerSelect}>
+              {/* 선택지 */}
+              <div className="mb-3">
                 {questions[currentQuestion].options.map((option, index) => (
-                  <FormControlLabel
+                  <div
                     key={index}
-                    value={option}
-                    control={<Radio sx={{ display: 'none' }} />}
-                    label={
-                      <Box
-                        sx={{
-                          width: '100%',
-                          border: '1px solid #ddd',
-                          borderRadius: 2,
-                          px: 2,
-                          py: 1.5,
-                          mb: 1.5,
-                          cursor: 'pointer',
-                          backgroundColor: selectedAnswer === option ? '#FFD600' : '#fff',
-                          color: selectedAnswer === option ? '#222' : '#000',
-                          boxShadow: selectedAnswer === option ? 2 : 0,
-                          transition: 'all 0.2s',
-                          '&:hover': {
-                            backgroundColor:
-                              selectedAnswer === option ? '#FFEA70' : '#f5f5f5',
-                          },
-                        }}
-                      >
-                        <Typography>
-                          <strong>{String.fromCharCode(65 + index)}.</strong> {option}
-                        </Typography>
-                      </Box>
-                    }
-                    disabled={showExplanation}
-                    sx={{ margin: 0 }}
-                  />
+                    className={`border rounded p-3 mb-2 ${selectedAnswer === option ? 'bg-warning shadow-sm' : 'bg-white'}`}
+                    onClick={() => !showExplanation && handleAnswerSelect(option)}
+                    style={{ cursor: showExplanation ? 'default' : 'pointer' }}
+                  >
+                    <strong>{String.fromCharCode(65 + index)}.</strong> {option}
+                  </div>
                 ))}
-              </RadioGroup>
-            </FormControl>
+              </div>
 
-            {showExplanation && (
-              <Alert
-                severity={
-                  selectedAnswer === questions[currentQuestion].correctAnswer
-                    ? 'success'
-                    : 'error'
-                }
-                sx={{
-                  mt: 2,
-                  borderRadius: 2,
-                  backgroundColor:
-                    selectedAnswer === questions[currentQuestion].correctAnswer
-                      ? '#FFF8B0'
-                      : '#FFE5E5',
-                  color: '#000',
-                  width: '100%',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {selectedAnswer === questions[currentQuestion].correctAnswer ? (
-                    <CheckCircleIcon />
-                  ) : (
-                    <CancelIcon />
-                  )}
-                  <Typography fontWeight="bold">
-                    {selectedAnswer === questions[currentQuestion].correctAnswer
-                      ? '정답입니다!'
-                      : '틀렸습니다.'}
-                  </Typography>
-                </Box>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  {questions[currentQuestion].explanation}
-                </Typography>
-              </Alert>
-            )}
+              {/* 해설 */}
+              {showExplanation && (
+                <div
+                  className={`alert ${selectedAnswer === questions[currentQuestion].correctAnswer ? 'alert-success' : 'alert-danger'}`}
+                >
+                  <div className="d-flex align-items-center">
+                    <i className={`bi ${selectedAnswer === questions[currentQuestion].correctAnswer ? 'bi-check-circle-fill' : 'bi-x-circle-fill'} me-2`}></i>
+                    <strong>{selectedAnswer === questions[currentQuestion].correctAnswer ? '정답입니다!' : '틀렸습니다.'}</strong>
+                  </div>
+                  <div className="mt-2">{questions[currentQuestion].explanation}</div>
+                </div>
+              )}
 
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-              <Button
-                variant="contained"
-                onClick={showExplanation ? handleNext : handleSubmit}
-                disabled={!selectedAnswer && !showExplanation}
-                sx={{
-                  backgroundColor: '#FFD600',
-                  color: '#222',
-                  fontWeight: 700,
-                  borderRadius: 99,
-                  py: 1,
-                  px: 4,
-                  '&:hover': { backgroundColor: '#FFEA70' },
-                }}
-              >
-                {showExplanation ? '다음 문제' : '제출하기'}
-              </Button>
-            </Box>
-          </Box>
-        )}
-      </Paper>
-    </Box>
+              {/* 버튼 */}
+              <div className="text-center mt-4">
+                <button
+                  className="btn btn-warning fw-bold rounded-pill px-4"
+                  onClick={showExplanation ? handleNext : handleSubmit}
+                  disabled={!selectedAnswer && !showExplanation}
+                >
+                  {showExplanation ? '다음 문제' : '제출하기'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
