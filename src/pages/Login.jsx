@@ -171,7 +171,7 @@ function Login({ onLogin }) {
             </Button>
           </form>
           <Box sx={{ textAlign: 'center', mt: 1, width: '100%' }}>
-            <Link component="button" underline="hover" color="inherit" onClick={() => navigate('/signup')} sx={{ fontSize: 14 }}>
+            <Link component="button" onClick={() => navigate('/signup')} color="inherit" sx={{ fontSize: 14 }}>
               계정이 없으신가요? 회원가입
             </Link>
           </Box>
@@ -186,11 +186,11 @@ function Login({ onLogin }) {
             mt: 1
           }}
         >
-          <Link href="#" underline="hover" sx={{ color: '#888', fontSize: 15, fontWeight: 400, mr: 1 }}>
+          <Link component="button" onClick={() => navigate('/terms')} color="inherit" sx={{ color: '#888', fontSize: 15, fontWeight: 400, mr: 1 }}>
             이용약관
           </Link>
           <span style={{ color: '#bbb', fontWeight: 700, margin: '0 6px' }}>|</span>
-          <Link href="#" underline="hover" sx={{ color: '#222', fontWeight: 700, fontSize: 15 }}>
+          <Link component="button" onClick={() => navigate('/privacy')} color="inherit" sx={{ color: '#222', fontWeight: 700, fontSize: 15 }}>
             개인정보처리방침
           </Link>
         </Box>

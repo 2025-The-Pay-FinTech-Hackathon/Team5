@@ -40,15 +40,16 @@ function Savings() {
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionType, setTransactionType] = useState('deposit');
   const [error, setError] = useState('');
+  const userId = user?.id;
 
   // 데이터 불러오기
   useEffect(() => {
     if (isParent) {
-      setChildren(getChildrenByParent(user.id));
+      setChildren(getChildrenByParent(userId));
     } else {
-      setChild(findChildById(user.id));
+      setChild(findChildById(userId));
     }
-  }, [user, location.pathname]);
+  }, [isParent, userId, location.pathname]);
 
   // 저축 목표 추가
   const handleSubmitGoal = () => {

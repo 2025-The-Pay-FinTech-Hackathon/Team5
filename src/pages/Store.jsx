@@ -78,12 +78,13 @@ function Store() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [tab, setTab] = useState(0);
   const location = useLocation();
+  const userId = user?.id;
 
   useEffect(() => {
     if (!isParent) {
-      setChild(findChildById(user.id));
+      setChild(findChildById(userId));
     }
-  }, [user, location.pathname]);
+  }, [userId, location.pathname]);
 
   const handleOpenDialog = (item) => {
     setSelectedItem(item);
