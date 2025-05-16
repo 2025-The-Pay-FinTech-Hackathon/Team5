@@ -10,5 +10,10 @@ export const cardPairs = [
     { id: 8, pairId: '신용등급', text: '신뢰도를 수치로 나타낸 것', type: 'definition' },
     { id: 9, pairId: '소비', text: '소비', type: 'concept' },
     { id: 10, pairId: '소비', text: '돈을 쓰는 행위', type: 'definition' },
-  ];
-  
+    { id: 11, pairId: '자산', text: '자산', type: 'concept' },
+    { id: 12, pairId: '자산', text: '가치가 있는 물건이나 자원', type: 'definition' },
+    { id: 13, pairId: '부채', text: '부채', type: 'concept' },
+    { id: 14, pairId: '부채', text: '갚아야 할 돈이나 의무', type: 'definition' },
+    { id: 15, pairId: '재정', text: '재정', type: 'concept' },
+    { id: 16, pairId: '재정', text: '수입과 지출의 관리 상태', type: 'definition' },
+];
