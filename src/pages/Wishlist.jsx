@@ -5,16 +5,12 @@ import {
   Typography,
   Box,
   Button,
-  Grid,
   TextField,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   List,
-  ListItem,
-  ListItemText,
-  Divider,
   IconButton,
   Alert,
   FormControl,
@@ -39,7 +35,6 @@ function Wishlist() {
   const [error, setError] = useState('');
   const userId = user?.id;
 
-  // 데이터 불러오기
   useEffect(() => {
     if (isParent) {
       const kids = getChildrenByParent(userId);
@@ -58,7 +53,6 @@ function Wishlist() {
 
   const wishlist = child?.wishlist || [];
 
-  // 추가/수정
   const handleSave = () => {
     setError('');
     if (!form.name || !form.targetAmount) {
@@ -82,7 +76,6 @@ function Wishlist() {
     setEditIdx(-1);
   };
 
-  // 삭제
   const handleDelete = (idx) => {
     const updated = { ...child };
     updated.wishlist = [...(updated.wishlist || [])];
@@ -91,7 +84,6 @@ function Wishlist() {
     setChild(updated);
   };
 
-  // 수정
   const handleEdit = (idx) => {
     setForm(wishlist[idx]);
     setEditIdx(idx);
@@ -99,9 +91,21 @@ function Wishlist() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '60vh' }}>
-      <Paper sx={{ p: 1, mb: 1, boxShadow: 1, borderRadius: 1 }}>
-        <Typography variant="h4" gutterBottom>위시리스트</Typography>
+    <Container maxWidth="md" sx={{ pt: '64px', mt: 2, mb: 4 }}>
+      <Paper
+        sx={{
+          p: 3,
+          boxShadow: 2,
+          borderRadius: 3,
+          maxWidth: 800,
+          mx: 'auto',
+          backgroundColor: '#ffffff',
+        }}
+      >
+        <Typography variant="h5" fontWeight="bold" gutterBottom>
+          위시리스트
+        </Typography>
+
         {isParent && (
           <FormControl sx={{ minWidth: 180, mb: 2 }} size="small">
             <InputLabel>자녀 선택</InputLabel>
@@ -116,37 +120,82 @@ function Wishlist() {
             </Select>
           </FormControl>
         )}
+
         {!isParent && (
-          <Button variant="contained" sx={{ mb: 2 }} onClick={() => { setForm({ name: '', targetAmount: '', memo: '' }); setEditIdx(-1); setOpenDialog(true); }}>
-            위시리스트 추가
-          </Button>
+          <Box display="flex" justifyContent="flex-end" mb={2}>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#fbc02d',
+                color: '#000',
+                fontWeight: 600,
+                px: 4,
+                py: 1,
+                borderRadius: 2,
+                textTransform: 'none',
+                '&:hover': {
+                  backgroundColor: '#f9a825',
+                },
+              }}
+              onClick={() => {
+                setForm({ name: '', targetAmount: '', memo: '' });
+                setEditIdx(-1);
+                setOpenDialog(true);
+              }}
+            >
+              + 항목 추가
+            </Button>
+          </Box>
         )}
+
         <List>
           {wishlist.length > 0 ? wishlist.slice().reverse().map((item, idx) => (
-            <Box key={item.id}>
-              <ListItem
-                secondaryAction={
-                  !isParent && (
-                    <>
-                      <IconButton edge="end" onClick={() => handleEdit(wishlist.length - 1 - idx)}><EditIcon /></IconButton>
-                      <IconButton edge="end" onClick={() => handleDelete(wishlist.length - 1 - idx)}><DeleteIcon /></IconButton>
-                    </>
-                  )
-                }
-              >
-                <ListItemText
-                  primary={`${item.name} (목표: ${item.targetAmount.toLocaleString()}원)`}
-                  secondary={item.memo}
-                />
-              </ListItem>
-              <Divider />
-            </Box>
+            <Paper
+              key={item.id}
+              sx={{
+                mb: 1.5,
+                p: 2,
+                borderLeft: '5px solid #fbc02d',
+                backgroundColor: '#fffde7',
+                borderRadius: 2,
+              }}
+              elevation={1}
+            >
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography fontSize="1rem" fontWeight={600}>
+                    {item.name}
+                  </Typography>
+                  <Typography fontSize="0.9rem" color="text.secondary">
+                    🎯 {item.targetAmount.toLocaleString()}원
+                  </Typography>
+                  {item.memo && (
+                    <Typography fontSize="0.85rem" sx={{ mt: 0.5 }}>
+                      📝 {item.memo}
+                    </Typography>
+                  )}
+                </Box>
+                {!isParent && (
+                  <Box>
+                    <IconButton size="small" onClick={() => handleEdit(wishlist.length - 1 - idx)}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => handleDelete(wishlist.length - 1 - idx)}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                )}
+              </Box>
+            </Paper>
           )) : (
-            <Typography color="text.secondary" sx={{ p: 1, textAlign: 'center' }}>위시리스트가 없습니다.</Typography>
+            <Typography sx={{ textAlign: 'center', color: 'text.secondary', py: 3 }}>
+              위시리스트가 없습니다.
+            </Typography>
           )}
         </List>
       </Paper>
-      {/* 위시리스트 추가/수정 다이얼로그 */}
+
+      {/* 다이얼로그 */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="xs" fullWidth>
         <DialogTitle>{editIdx === -1 ? '위시리스트 추가' : '위시리스트 수정'}</DialogTitle>
         <DialogContent>
@@ -181,11 +230,17 @@ function Wishlist() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>취소</Button>
-          <Button onClick={handleSave} variant="contained">저장</Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            sx={{ backgroundColor: '#fbc02d', color: '#000', fontWeight: 600 }}
+          >
+            저장
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>
   );
 }
 
-export default Wishlist; 
+export default Wishlist;
