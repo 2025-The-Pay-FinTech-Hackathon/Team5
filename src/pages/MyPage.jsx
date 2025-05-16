@@ -96,7 +96,7 @@ const MyPage = () => {
   ];
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4, pt: '72px', overflowX: 'auto' }}>
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
           <ProfileCustomization user={user} onUpdate={handleProfileUpdate} />
@@ -147,7 +147,7 @@ const MyPage = () => {
         </Grid>
 
         <Grid item xs={12} md={8}>
-          <Card>
+          <Card sx={{ minWidth: 320, maxWidth: '100%', overflowX: 'auto' }}>
             <CardContent>
               <Typography variant="h5" gutterBottom>
                 활동 요약
@@ -189,7 +189,7 @@ const MyPage = () => {
             </CardContent>
           </Card>
 
-          <Box sx={{ mt: 3 }}>
+          <Box sx={{ mt: 3, minWidth: 320, maxWidth: '100%', overflowX: 'auto' }}>
             <ActivityHistory activities={activities} />
           </Box>
         </Grid>

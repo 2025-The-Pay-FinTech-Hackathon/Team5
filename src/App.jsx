@@ -1,8 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline, GlobalStyles } from '@mui/material';
+import { ThemeProvider, CssBaseline, GlobalStyles } from '@mui/material';
 import { useState } from 'react';
 import lottie from 'lottie-web';
 import { defineElement } from 'lord-icon-element';
+import { lightTheme } from './theme/theme';
 
 // Components
 import Navigation from './components/Navigation';
@@ -29,108 +30,6 @@ import Wishlist from './pages/Wishlist';
 import BadgePage from './pages/BadgePage';
 import MemoryGame from './pages/MemoryGame';
 import ParentReportPage from './pages/ParentReportPage';
-
-// Modern pastel theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#6C63FF', // 파스텔 블루퍼플
-      light: '#A393F9',
-      dark: '#4E54C8',
-      contrastText: '#fff',
-    },
-    secondary: {
-      main: '#F67280', // 파스텔 핑크
-      light: '#FFB7B2',
-      dark: '#C06C84',
-      contrastText: '#fff',
-    },
-    background: {
-      default: '#F8F8FF', // 밝은 파스텔 배경
-      paper: '#FFFFFF',
-    },
-    success: {
-      main: '#43E97B',
-      contrastText: '#fff',
-    },
-    info: {
-      main: '#5BC0EB',
-      contrastText: '#fff',
-    },
-  },
-  shape: {
-    borderRadius: 16,
-  },
-  typography: {
-    fontFamily: '"Noto Sans KR", "Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 700,
-      letterSpacing: '-0.5px',
-    },
-    h6: {
-      fontWeight: 600,
-    },
-    button: {
-      textTransform: 'none',
-      fontWeight: 600,
-      letterSpacing: '0.5px',
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          boxShadow: '0 2px 8px 0 rgba(108,99,255,0.08)',
-          transition: 'all 0.2s',
-          '&:hover': {
-            boxShadow: '0 4px 16px 0 rgba(108,99,255,0.16)',
-            transform: 'translateY(-2px) scale(1.03)',
-          },
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 18,
-          boxShadow: '0 2px 16px 0 rgba(108,99,255,0.07)',
-          transition: 'all 0.2s',
-          '&:hover': {
-            boxShadow: '0 6px 24px 0 rgba(108,99,255,0.13)',
-            transform: 'translateY(-2px) scale(1.01)',
-          },
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          borderRadius: 18,
-        },
-      },
-    },
-    MuiDialog: {
-      styleOverrides: {
-        paper: {
-          borderRadius: 20,
-        },
-      },
-    },
-    MuiTabs: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          background: '#F3F3FA',
-        },
-        indicator: {
-          height: 4,
-          borderRadius: 4,
-        },
-      },
-    },
-  },
-});
 
 function App() {
   const [user, setUser] = useState(null);
@@ -170,7 +69,7 @@ function App() {
   }
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={lightTheme}>
       <CssBaseline />
       <GlobalStyles styles={{
         body: { background: '#F8F8FF' },
