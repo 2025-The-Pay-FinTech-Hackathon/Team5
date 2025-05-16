@@ -208,16 +208,14 @@ export default function Signup() {
             </Link>
           </Box>
         </Paper>
-        <Box
-          sx={{
-            width: '100%',
-            maxWidth: 400,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            mt: 1
-          }}
-        >
+        <Box sx={{
+          width: '100%',
+          maxWidth: 400,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          mt: 1
+        }}>
           <Link component="button" onClick={() => navigate('/terms')} underline="hover" sx={{ color: '#888', fontSize: 15, fontWeight: 400, mr: 1 }}>
             이용약관
           </Link>

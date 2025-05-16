@@ -81,7 +81,6 @@ const MyPage = () => {
     const userData = JSON.parse(sessionStorage.getItem('user'));
     setUser(userData);
     setEditedUser(userData);
-    // 자녀 데이터도 항상 최신으로
     if (userData?.role === 'child') {
       setChild(findChildById(userData.id));
     }
@@ -97,7 +96,6 @@ const MyPage = () => {
   };
 
   const handleSave = () => {
-    // API 호출하여 사용자 정보 업데이트
     sessionStorage.setItem('user', JSON.stringify(editedUser));
     setUser(editedUser);
     setEditMode(false);
@@ -171,7 +169,7 @@ const MyPage = () => {
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
 
-  // 누적 포인트 계산(미션, 퀴즈, 메모리게임)
+  // 누적 포인트 계산
   const totalPointsEarned =
     (target?.missions || []).reduce((sum, m) => sum + (m.status === '완료' ? Number(m.reward || 0) : 0), 0) +
     (target?.quizResults || []).reduce((sum, q) => sum + (q.score || 0), 0) +
@@ -257,8 +255,8 @@ const MyPage = () => {
       </Box>
 
       <Container maxWidth="lg">
-        <Grid container spacing={4}>
-          {/* 프로필 정보 */}
+        <Grid container spacing={4} alignItems="stretch">
+          {/* 프로필 카드 (왼쪽) */}
           <Grid item xs={12} md={4}>
             <Paper sx={{ 
               p: 3,
@@ -349,27 +347,28 @@ const MyPage = () => {
             </Paper>
           </Grid>
 
-          {/* 활동 통계 */}
-          <Grid item xs={12} md={8}>
+          {/* 활동 통계 카드 (오른쪽, 2줄 3열) */}
+          <Grid item xs={12} md={8} display="flex" alignItems="center">
             <Paper sx={{ 
               p: 3,
               borderRadius: 2,
               bgcolor: '#fff',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              mb: 4
+              width: '100%',
             }}>
               <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
                 활동 통계
               </Typography>
               <Grid container spacing={3}>
-                {stats.map((stat) => (
-                  <Grid item xs={6} sm={3} key={stat.label}>
+                {stats.map((stat, idx) => (
+                  <Grid item xs={12} sm={6} md={4} key={stat.label || idx}>
                     <Card sx={{ 
                       borderRadius: 2,
                       boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      '&:hover': {
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                      },
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center'
                     }}>
                       <CardContent>
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -394,47 +393,48 @@ const MyPage = () => {
                 ))}
               </Grid>
             </Paper>
-
-            {/* 최근 활동 */}
-            <Paper sx={{ 
-              p: 3,
-              borderRadius: 2,
-              bgcolor: '#fff',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-            }}>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
-                최근 활동
-              </Typography>
-              <List>
-                {recentActivities.length > 0 ? recentActivities.map((activity, index) => (
-                  <React.Fragment key={index}>
-                    <ListItem>
-                      <ListItemIcon>
-                        {activity.type === '퀴즈' ? <SchoolIcon /> : activity.type === '미션' ? <EmojiEventsIcon /> : activity.type === '저축' ? <SavingsIcon /> : activity.type === '메모리게임' ? <StarIcon /> : <StarIcon />}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={activity.title}
-                        secondary={activity.date}
-                      />
-                      <Chip
-                        label={`+${activity.points}${activity.type === '저축' ? '원' : '점'}`}
-                        color="primary"
-                        size="small"
-                        sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 600 }}
-                      />
-                    </ListItem>
-                    {index < recentActivities.length - 1 && <Divider />}
-                  </React.Fragment>
-                )) : (
-                  <Typography color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>최근 활동이 없습니다.</Typography>
-                )}
-              </List>
-            </Paper>
           </Grid>
         </Grid>
 
+        {/* 최근 활동 */}
+        <Paper sx={{ 
+          p: 3,
+          borderRadius: 2,
+          bgcolor: '#fff',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          mt: 4
+        }}>
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
+            최근 활동
+          </Typography>
+          <List>
+            {recentActivities.length > 0 ? recentActivities.map((activity, index) => (
+              <React.Fragment key={index}>
+                <ListItem>
+                  <ListItemIcon>
+                    {activity.type === '퀴즈' ? <SchoolIcon /> : activity.type === '미션' ? <EmojiEventsIcon /> : activity.type === '저축' ? <SavingsIcon /> : activity.type === '메모리게임' ? <StarIcon /> : <StarIcon />}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={activity.title}
+                    secondary={activity.date}
+                  />
+                  <Chip
+                    label={`+${activity.points}${activity.type === '저축' ? '원' : '점'}`}
+                    color="primary"
+                    size="small"
+                    sx={{ bgcolor: '#FFD600', color: '#222', fontWeight: 600 }}
+                  />
+                </ListItem>
+                {index < recentActivities.length - 1 && <Divider />}
+              </React.Fragment>
+            )) : (
+              <Typography color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>최근 활동이 없습니다.</Typography>
+            )}
+          </List>
+        </Paper>
+
         {/* 내 뱃지 현황 */}
-        <Paper sx={{ p: 3, mb: 4, borderRadius: 2, bgcolor: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+        <Paper sx={{ p: 3, my: 4, borderRadius: 2, bgcolor: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
           <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
             내 뱃지
           </Typography>
@@ -550,4 +550,4 @@ const MyPage = () => {
   );
 };
 
-export default MyPage; 
+export default MyPage;

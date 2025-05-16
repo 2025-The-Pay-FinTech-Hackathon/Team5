@@ -47,6 +47,7 @@ import {
 import { findChildById, updateChild } from '../utils/localData';
 import { getChildStats } from '../utils/childUtils';
 import { getRecentTransactions } from '../utils/transactionUtils';
+import ChatbotWidget from '../components/ChatbotWidget';
 
 const ChildDashboard = () => {
   const location = useLocation();
@@ -76,8 +77,12 @@ const ChildDashboard = () => {
 
   useEffect(() => {
     if (user?.role === 'child') {
-      setChild(findChildById(user.id));
+      const latest = findChildById(user.id);
+      if (JSON.stringify(latest) !== JSON.stringify(child)) {
+        setChild(latest);
+      }
     }
+    // eslint-disable-next-line
   }, [user, location.pathname]);
 
   // 최근 활동(미션, 퀴즈, 메모리게임 등)
@@ -285,14 +290,14 @@ const ChildDashboard = () => {
 
   // 빠른 기능에 대출 신청 버튼 추가
   const quickActions = [
-    { icon: <SchoolIcon />, label: '금융 퀴즈', path: '/child/quiz' },
-    { icon: <EmojiEventsIcon />, label: '미션', path: '/child/missions' },
-    { icon: <SavingsIcon />, label: '저축', path: '/child/savings' },
-    { icon: <StoreIcon />, label: '보상 상점', path: '/child/store' },
-    { icon: <AccountBalanceIcon />, label: '대출 신청', path: null, onClick: () => setOpenLoanDialog(true) },
-    { icon: <ChatIcon />, label: '메시지', path: '/child/messages' },
-    { icon: <PeopleIcon />, label: '소셜', path: '/child/social' },
-    { icon: <MemoryIcon />, label: '카드 매칭 게임', path: '/memory-game' },
+    { icon: <SchoolIcon />, label: '금융 퀴즈', onClick: () => navigate('/child/quiz') },
+    { icon: <EmojiEventsIcon />, label: '미션', onClick: () => navigate('/child/missions') },
+    { icon: <SavingsIcon />, label: '저축', onClick: () => navigate('/child/savings') },
+    { icon: <StoreIcon />, label: '보상 상점', onClick: () => navigate('/child/store') },
+    { icon: <AccountBalanceIcon />, label: '대출 신청', onClick: () => setOpenLoanDialog(true) },
+    { icon: <ChatIcon />, label: '메시지', onClick: () => navigate('/child/messages') },
+    { icon: <PeopleIcon />, label: '소셜', onClick: () => navigate('/child/social') },
+    { icon: <MemoryIcon />, label: '카드 매칭 게임', onClick: () => navigate('/memory-game') },
   ];
 
   if (!stats) return null;
@@ -379,9 +384,9 @@ const ChildDashboard = () => {
                 variant="contained"
                 color="primary"
                 startIcon={action.icon}
-                onClick={() => {
-                  if (action.onClick) action.onClick();
-                  else if (action.path) navigate(action.path);
+                onClick={e => {
+                  e.preventDefault();
+                  action.onClick();
                 }}
                 sx={{ fontWeight: 600, bgcolor: '#FFD600', color: '#222', '&:hover': { bgcolor: '#FFE066' } }}
               >
@@ -521,8 +526,8 @@ const ChildDashboard = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {recentActivities.map((activity) => (
-                  <TableRow key={activity.id}>
+                {recentActivities.map((activity, idx) => (
+                  <TableRow key={activity.type + '-' + (activity.id || idx) + '-' + activity.date}>
                     <TableCell>{new Date(activity.date).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <Chip
@@ -644,8 +649,8 @@ const ChildDashboard = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {allTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
+                {allTransactions.map((transaction, idx) => (
+                  <TableRow key={transaction.id + '-' + idx + '-' + transaction.date}>
                     <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
                     <TableCell>{transaction.description}</TableCell>
                     <TableCell sx={{ 
@@ -669,6 +674,14 @@ const ChildDashboard = () => {
           </TableContainer>
         </Paper>
       </Container>
+      {/* 오른쪽 하단 챗봇 위젯 */}
+      <ChatbotWidget userContext={{
+        name: child?.name,
+        points: child?.points,
+        balance: child?.balance,
+        loans: child?.loans,
+        loanRequests: child?.loanRequests
+      }} />
     </Box>
   );
 };
