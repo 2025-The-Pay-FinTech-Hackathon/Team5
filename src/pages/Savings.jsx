@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   Container,
-  Grid,
-  Paper,
-  Typography,
   Box,
+  Typography,
   Button,
   Card,
   CardContent,
@@ -16,8 +14,9 @@ import {
   DialogActions,
   IconButton,
   Tooltip,
-  Chip,
   Alert,
+  Grid,
+  Paper,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -25,6 +24,7 @@ import {
   Info as InfoIcon,
   Savings as SavingsIcon,
 } from '@mui/icons-material';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartTooltip } from 'recharts';
 import { findChildById, updateChild, getChildrenByParent } from '../utils/localData';
 import { useLocation } from 'react-router-dom';
 
@@ -42,7 +42,6 @@ function Savings() {
   const [error, setError] = useState('');
   const userId = user?.id;
 
-  // 데이터 불러오기
   useEffect(() => {
     if (isParent) {
       setChildren(getChildrenByParent(userId));
@@ -51,7 +50,6 @@ function Savings() {
     }
   }, [isParent, userId, location.pathname]);
 
-  // 저축 목표 추가
   const handleSubmitGoal = () => {
     setError('');
     if (!newGoal.title || !newGoal.targetAmount || !newGoal.deadline) {
@@ -75,7 +73,6 @@ function Savings() {
     setNewGoal({ title: '', targetAmount: '', deadline: '' });
   };
 
-  // 입금/출금
   const handleTransaction = () => {
     setError('');
     if (!selectedGoal || !transactionAmount || isNaN(transactionAmount) || Number(transactionAmount) <= 0) {
@@ -95,17 +92,12 @@ function Savings() {
         } else {
           newAmount -= Number(transactionAmount);
         }
-        if (newAmount < 0) newAmount = 0;
-        if (newAmount > goal.targetAmount) newAmount = goal.targetAmount;
+        newAmount = Math.max(0, Math.min(newAmount, goal.targetAmount));
         return { ...goal, currentAmount: newAmount };
       }
       return goal;
     });
-    if (transactionType === 'deposit') {
-      updated.balance = (updated.balance || 0) - Number(transactionAmount);
-    } else {
-      updated.balance = (updated.balance || 0) + Number(transactionAmount);
-    }
+    updated.balance = (updated.balance || 0) + (transactionType === 'withdraw' ? Number(transactionAmount) : -Number(transactionAmount));
     updateChild(updated);
     setChild(updated);
     setSelectedGoal(null);
@@ -113,136 +105,84 @@ function Savings() {
     setTransactionType('deposit');
   };
 
-  // 부모: 자녀별 저축 목표 보기
-  if (isParent) {
-    return (
-      <Container maxWidth="lg" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '70vh' }}>
-        <Paper sx={{ p: 1, mb: 1, display: 'flex', alignItems: 'center', boxShadow: 1, borderRadius: 1 }}>
-          <SavingsIcon sx={{ mr: 1, fontSize: 32 }} />
-          <Typography variant="h4" component="h1">자녀 저축 목표</Typography>
-        </Paper>
-        <Grid container spacing={1} alignItems="flex-start">
-          {children.length === 0 && (
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 220 }}>
-              <Typography color="text.secondary" sx={{ p: 4, width: '100%', textAlign: 'center' }}>자녀가 없습니다.</Typography>
-            </Grid>
-          )}
-          {children.map(child => (
-            <Grid item xs={12} md={6} key={child.id} sx={{ display: 'flex' }}>
-              <Paper sx={{ p: 1, boxShadow: 1, flexGrow: 1, minHeight: 80, display: 'flex', flexDirection: 'column', borderRadius: 1 }}>
-                <Typography variant="h6">{child.name}</Typography>
-                {(child.savings && child.savings.length > 0) ? child.savings.map(goal => (
-                  <Card key={goal.id} sx={{ my: 1, boxShadow: 1, borderRadius: 1 }}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Typography variant="subtitle1">{goal.title}</Typography>
-                        <Tooltip title="목표 금액과 마감일을 확인하세요">
-                          <IconButton size="small"><InfoIcon /></IconButton>
-                        </Tooltip>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary">목표 금액: {goal.targetAmount.toLocaleString()}원</Typography>
-                      <Typography variant="body2" color="text.secondary">마감일: {goal.deadline}</Typography>
-                      <LinearProgress variant="determinate" value={(goal.currentAmount / goal.targetAmount) * 100} sx={{ height: 10, borderRadius: 5, my: 1 }} />
-                      <Typography variant="body2" color="text.secondary">현재: {goal.currentAmount.toLocaleString()}원 ({((goal.currentAmount / goal.targetAmount) * 100).toFixed(1)}%)</Typography>
-                    </CardContent>
-                  </Card>
-                )) : <Typography color="text.secondary">저축 목표가 없습니다.</Typography>}
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-    );
-  }
+  const chartData = (child?.savings || []).map(goal => ({
+    name: goal.title,
+    value: goal.currentAmount,
+    fill: `#${Math.floor(Math.random()*16777215).toString(16)}`,
+  }));
 
-  // 자녀: 저축 목표 관리
   return (
     <Container maxWidth="lg" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '70vh' }}>
-      <Paper sx={{ p: 1, mb: 1, display: 'flex', alignItems: 'center', boxShadow: 1, borderRadius: 1 }}>
-        <SavingsIcon sx={{ mr: 1, fontSize: 32 }} />
-        <Typography variant="h4" component="h1">저축 목표</Typography>
-        <Button variant="contained" color="primary" startIcon={<AddIcon />} sx={{ ml: 2 }} onClick={() => setOpenDialog(true)}>
-          새 목표 만들기
-        </Button>
-      </Paper>
-      <Grid container spacing={1} alignItems="flex-start">
-        {(child?.savings && child.savings.length > 0) ? child.savings.map(goal => (
-          <Grid item xs={12} md={6} key={goal.id} sx={{ display: 'flex' }}>
-            <Card sx={{ boxShadow: 1, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 80, borderRadius: 1 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Typography variant="h6">{goal.title}</Typography>
-                  <Tooltip title="목표 금액과 마감일을 확인하세요">
-                    <IconButton size="small"><InfoIcon /></IconButton>
-                  </Tooltip>
-                </Box>
-                <Typography variant="body2" color="text.secondary">목표 금액: {goal.targetAmount.toLocaleString()}원</Typography>
-                <Typography variant="body2" color="text.secondary">마감일: {goal.deadline}</Typography>
-                <LinearProgress variant="determinate" value={(goal.currentAmount / goal.targetAmount) * 100} sx={{ height: 10, borderRadius: 5, my: 1 }} />
-                <Typography variant="body2" color="text.secondary">현재: {goal.currentAmount.toLocaleString()}원 ({((goal.currentAmount / goal.targetAmount) * 100).toFixed(1)}%)</Typography>
-                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                  <Button variant="outlined" color="primary" startIcon={<AddIcon />} onClick={() => { setSelectedGoal(goal); setTransactionType('deposit'); }}>
-                    입금
-                  </Button>
-                  <Button variant="outlined" color="secondary" startIcon={<RemoveIcon />} onClick={() => { setSelectedGoal(goal); setTransactionType('withdraw'); }} disabled={goal.currentAmount <= 0}>
-                    출금
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        )) : (
-          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 220 }}>
-            <Typography color="text.secondary" sx={{ p: 4, width: '100%', textAlign: 'center' }}>저축 목표가 없습니다.</Typography>
-          </Grid>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <SavingsIcon sx={{ mr: 1, fontSize: 32 }} />
+          <Typography variant="h5" fontWeight={700}>저축 목표</Typography>
+        </Box>
+        {!isParent && (
+          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={() => setOpenDialog(true)}>
+            새 목표 만들기
+          </Button>
         )}
+      </Box>
+
+      {!isParent && child?.savings?.length > 0 && (
+        <Paper sx={{ p: 2, mb: 4 }}>
+          <Typography variant="subtitle1" sx={{ mb: 2 }}>나의 저축 분포</Typography>
+          <ResponsiveContainer width="100%" height={240}>
+            <PieChart>
+              <Pie data={chartData} dataKey="value" nameKey="name" outerRadius={80} label />
+              <RechartTooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </Paper>
+      )}
+
+      <Grid container spacing={2}>
+        {(isParent ? children : child?.savings)?.map((item, index) => {
+          const savings = isParent ? item.savings : [item];
+          const name = isParent ? item.name : null;
+          return savings?.map((goal, idx) => (
+            <Grid item xs={12} sm={6} md={4} key={goal.id + '-' + idx}>
+              <Card sx={{ p: 2, borderRadius: 2, boxShadow: 3 }}>
+                <CardContent>
+                  {name && <Typography variant="subtitle2" color="primary" sx={{ mb: 1 }}>{name}</Typography>}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography fontWeight={600}>{goal.title}</Typography>
+                    <Tooltip title="목표 정보">
+                      <IconButton size="small"><InfoIcon fontSize="small" /></IconButton>
+                    </Tooltip>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">목표 금액: {goal.targetAmount.toLocaleString()}원</Typography>
+                  <Typography variant="body2" color="text.secondary">마감일: {goal.deadline}</Typography>
+                  <LinearProgress variant="determinate" value={(goal.currentAmount / goal.targetAmount) * 100} sx={{ height: 8, borderRadius: 4, my: 1 }} />
+                  <Typography variant="caption" color="text.secondary">현재: {goal.currentAmount.toLocaleString()}원 ({((goal.currentAmount / goal.targetAmount) * 100).toFixed(1)}%)</Typography>
+                  {!isParent && (
+                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                      <Button variant="outlined" color="primary" size="small" startIcon={<AddIcon />} onClick={() => { setSelectedGoal(goal); setTransactionType('deposit'); }}>입금</Button>
+                      <Button variant="outlined" color="secondary" size="small" startIcon={<RemoveIcon />} onClick={() => { setSelectedGoal(goal); setTransactionType('withdraw'); }} disabled={goal.currentAmount <= 0}>출금</Button>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          ));
+        })}
       </Grid>
 
-      {/* New Goal Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>새 저축 목표 만들기</DialogTitle>
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <Box sx={{ mt: 2 }}>
-            <TextField
-              fullWidth
-              label="목표 이름"
-              name="title"
-              value={newGoal.title}
-              onChange={e => setNewGoal(f => ({ ...f, title: e.target.value }))}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="목표 금액"
-              name="targetAmount"
-              type="number"
-              value={newGoal.targetAmount}
-              onChange={e => setNewGoal(f => ({ ...f, targetAmount: e.target.value }))}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="마감일"
-              name="deadline"
-              type="date"
-              value={newGoal.deadline}
-              onChange={e => setNewGoal(f => ({ ...f, deadline: e.target.value }))}
-              margin="normal"
-              required
-              InputLabelProps={{ shrink: true }}
-            />
-          </Box>
+          <TextField fullWidth label="목표 이름" value={newGoal.title} onChange={e => setNewGoal(f => ({ ...f, title: e.target.value }))} margin="normal" required />
+          <TextField fullWidth label="목표 금액" type="number" value={newGoal.targetAmount} onChange={e => setNewGoal(f => ({ ...f, targetAmount: e.target.value }))} margin="normal" required />
+          <TextField fullWidth label="마감일" type="date" value={newGoal.deadline} onChange={e => setNewGoal(f => ({ ...f, deadline: e.target.value }))} margin="normal" required InputLabelProps={{ shrink: true }} />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>취소</Button>
-          <Button onClick={handleSubmitGoal} variant="contained" color="primary">만들기</Button>
+          <Button onClick={handleSubmitGoal} variant="contained">만들기</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Transaction Dialog */}
       <Dialog open={!!selectedGoal} onClose={() => setSelectedGoal(null)} maxWidth="xs" fullWidth>
         <DialogTitle>{selectedGoal?.title} - {selectedGoal?.currentAmount?.toLocaleString()}원</DialogTitle>
         <DialogContent>
@@ -273,4 +213,4 @@ function Savings() {
   );
 }
 
-export default Savings; 
+export default Savings;
