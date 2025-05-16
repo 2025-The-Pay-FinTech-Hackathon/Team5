@@ -214,11 +214,12 @@ const MyPage = () => {
             마이페이지
           </Typography>
           <Typography variant="h6" sx={{ 
-            color: '#666',
-            fontWeight: 500
-          }}>
-            내 정보를 확인하고 관리해보세요
-          </Typography>
+  color: '#000',
+  fontWeight: 500
+}}>
+  내 정보를 확인하고 관리해보세요
+</Typography>
+
           {/* 부모 계정일 때 자녀 선택 드롭다운 */}
           {isParent && children.length > 1 && (
             <FormControl sx={{ mt: 2, minWidth: 180 }} size="small">

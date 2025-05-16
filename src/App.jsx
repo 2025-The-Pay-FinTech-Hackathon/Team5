@@ -12,8 +12,7 @@ import { FirestoreProvider } from './contexts/FirestoreContext';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import ErrorMessage from './components/common/ErrorMessage';
 import NotificationCenter from './components/notifications/NotificationCenter';
-import MessageCenter from './components/messages/MessageCenter';
-
+import MessageCenter from './components/message/MessageCenter';
 import FinancialEducation from './components/education/FinancialEducation';
 import PerformanceAnalytics from './components/analytics/PerformanceAnalytics';
 import SocialFeatures from './components/social/SocialFeatures';
