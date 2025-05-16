@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; // ✅ axios 추가
 import {
   Paper,
   Typography,
@@ -11,7 +12,6 @@ import {
   Alert,
   Link,
 } from '@mui/material';
-import { findUserByEmail } from '../utils/localData';
 
 function Login({ onLogin }) {
   const navigate = useNavigate();
@@ -20,60 +20,52 @@ function Login({ onLogin }) {
   const [error, setError] = useState('');
 
   const handleAccountTypeChange = (event, newValue) => setAccountType(newValue);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!formData.email || !formData.password) {
+
+    const { email, password } = formData;
+
+    if (!email || !password) {
       setError('이메일과 비밀번호를 모두 입력해주세요.');
       return;
     }
-    const user = findUserByEmail(formData.email);
-    if (!user) {
-      setError('존재하지 않는 이메일입니다.');
-      return;
-    }
-    if (user.password !== formData.password) {
-      setError('비밀번호가 일치하지 않습니다.');
-      return;
-    }
-    if (accountType === 'parent') {
-      if (user.role !== 'parent') {
-        setError('부모 계정이 아닙니다.');
-        return;
-      }
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/login', {
+        email,
+        password,
+        role: accountType
+      });
+
+      const user = response.data;
+
+      sessionStorage.setItem('user', JSON.stringify(user));
+
+      
       onLogin(user);
-      navigate('/parent');
-    } else {
-      if (user.role !== 'child') {
-        setError('자녀 계정이 아닙니다.');
-        return;
-      }
-      if (!user.parentId) {
-        setError('이 자녀 계정은 부모와 연동되어 있지 않습니다.');
-        return;
-      }
-      onLogin(user);
-      navigate('/child');
+      navigate(accountType === 'parent' ? '/parent' : '/child');
+    } catch (err) {
+      const msg = err.response?.data?.error || '서버 오류';
+      setError(msg);
     }
   };
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', width: '100vw', overflow: 'hidden', background: 'linear-gradient(90deg, #fff 40%, #ffe066 100%)' }}>
-      {/* 왼쪽(로그인) 영역 */}
+      {/* 왼쪽 로그인 영역 */}
       <Box sx={{
         flex: 4,
-        minWidth: 0,
-        bgcolor: 'transparent',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        position: 'relative',
         zIndex: 2
       }}>
         <Typography variant="h2" fontWeight={900} sx={{ mb: 6, color: '#111', letterSpacing: '-2px', fontSize: 56 }}>
@@ -122,11 +114,13 @@ function Login({ onLogin }) {
                 minHeight: 48,
               }} />
           </Tabs>
+
           {error && (
             <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
               {error}
             </Alert>
           )}
+
           <form onSubmit={handleSubmit} style={{ width: '100%' }}>
             <TextField
               fullWidth
@@ -170,22 +164,22 @@ function Login({ onLogin }) {
               로그인
             </Button>
           </form>
+
           <Box sx={{ textAlign: 'center', mt: 1, width: '100%' }}>
             <Link component="button" onClick={() => navigate('/signup')} color="inherit" sx={{ fontSize: 14 }}>
               계정이 없으신가요? 회원가입
             </Link>
           </Box>
         </Paper>
-        <Box
-          sx={{
-            width: '100%',
-            maxWidth: 400,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            mt: 1
-          }}
-        >
+
+        <Box sx={{
+          width: '100%',
+          maxWidth: 400,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          mt: 1
+        }}>
           <Link component="button" onClick={() => navigate('/terms')} color="inherit" sx={{ color: '#888', fontSize: 15, fontWeight: 400, mr: 1 }}>
             이용약관
           </Link>
@@ -195,10 +189,10 @@ function Login({ onLogin }) {
           </Link>
         </Box>
       </Box>
-      {/* 오른쪽(노란) 영역 */}
+
+      {/* 오른쪽 시각 영역 그대로 유지 */}
       <Box sx={{
         flex: 6,
-        minWidth: 0,
         bgcolor: '#FFD600',
         position: 'relative',
         display: 'flex',
@@ -207,7 +201,7 @@ function Login({ onLogin }) {
         alignItems: 'center',
         overflow: 'hidden'
       }}>
-        {/* 배경 그라데이션/패턴 */}
+        {/* 배경 그라데이션 */}
         <Box sx={{
           position: 'absolute',
           inset: 0,
@@ -215,7 +209,7 @@ function Login({ onLogin }) {
           opacity: 0.25,
           zIndex: 0
         }} />
-        {/* 아이콘 일러스트 */}
+        {/* 아이콘, 카드, Glow 원, ₩ */}
         <Box sx={{
           width: 500,
           height: 500,
@@ -229,7 +223,6 @@ function Login({ onLogin }) {
           position: 'relative',
           zIndex: 1
         }}>
-          {/* 카드 */}
           <lord-icon
             src="https://cdn.lordicon.com/yzctygpq.json"
             trigger="loop"
@@ -245,7 +238,6 @@ function Login({ onLogin }) {
               zIndex: 1
             }}
           />
-          {/* 차트 */}
           <lord-icon
             src="https://cdn.lordicon.com/ivayzoru.json"
             trigger="loop"
@@ -261,7 +253,6 @@ function Login({ onLogin }) {
               zIndex: 1
             }}
           />
-          {/* 코인 */}
           <lord-icon
             src="https://cdn.lordicon.com/ggihhudh.json"
             trigger="loop"
@@ -277,7 +268,6 @@ function Login({ onLogin }) {
               zIndex: 1
             }}
           />
-          {/* 중앙 Glow 원과 ₩ */}
           <Box
             sx={{
               width: 180,
@@ -294,12 +284,15 @@ function Login({ onLogin }) {
               zIndex: 2
             }}
           >
-            <Typography variant="h1" fontWeight={900} sx={{ color: '#fff', opacity: 0.97, textShadow: '0 2px 16px #FFD600' }}>
+            <Typography variant="h1" fontWeight={900} sx={{
+              color: '#fff',
+              opacity: 0.97,
+              textShadow: '0 2px 16px #FFD600'
+            }}>
               ₩
             </Typography>
           </Box>
         </Box>
-        {/* 오른쪽 하단 앱명/설명 */}
         <Box sx={{
           position: 'absolute',
           right: 80,
@@ -307,10 +300,18 @@ function Login({ onLogin }) {
           textAlign: 'right',
           zIndex: 2
         }}>
-          <Typography variant="h3" fontWeight={900} sx={{ color: '#fff', mb: 0.5, textShadow: '0 4px 24px #FFD600' }}>
+          <Typography variant="h3" fontWeight={900} sx={{
+            color: '#fff', mb: 0.5,
+            textShadow: '0 4px 24px #FFD600'
+          }}>
             Dondoli
           </Typography>
-          <Typography variant="h6" sx={{ color: '#fff', opacity: 0.97, fontWeight: 600, textShadow: '0 2px 8px #FFD600' }}>
+          <Typography variant="h6" sx={{
+            color: '#fff',
+            opacity: 0.97,
+            fontWeight: 600,
+            textShadow: '0 2px 8px #FFD600'
+          }}>
             부모-자녀 금융 교육
           </Typography>
         </Box>
@@ -319,4 +320,4 @@ function Login({ onLogin }) {
   );
 }
 
-export default Login; 
+export default Login;

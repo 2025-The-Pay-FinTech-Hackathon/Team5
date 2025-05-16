@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Paper,
   Typography,
@@ -11,7 +12,6 @@ import {
   Alert,
   Link,
 } from '@mui/material';
-import { addUser, findUserByEmail } from '../utils/localData';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -26,33 +26,45 @@ export default function Signup() {
   const [success, setSuccess] = useState('');
 
   const handleAccountTypeChange = (e, v) => setAccountType(v);
-  const handleInputChange = e => setFormData(f => ({ ...f, [e.target.name]: e.target.value }));
-  const handleSubmit = e => {
+  const handleInputChange = e =>
+    setFormData(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  const handleSubmit = async e => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+
+    const { name, email, password, confirmPassword } = formData;
+
+    if (!name || !email || !password || !confirmPassword) {
       setError('모든 항목을 입력해주세요.');
       return;
     }
-    if (formData.password !== formData.confirmPassword) {
+
+    if (password !== confirmPassword) {
       setError('비밀번호가 일치하지 않습니다.');
       return;
     }
-    if (findUserByEmail(formData.email)) {
-      setError('이미 존재하는 이메일입니다.');
-      return;
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/register', {
+        name,
+        email,
+        password,
+        role: accountType,
+      });
+
+      setSuccess(response.data.message || '회원가입이 완료되었습니다!');
+      setTimeout(() => navigate('/'), 1500);
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setError('이미 존재하는 이메일입니다.');
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('서버 오류가 발생했습니다.');
+      }
     }
-    // 회원 정보 저장
-    addUser({
-      id: Date.now(),
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      role: accountType,
-    });
-    setSuccess('회원가입이 완료되었습니다!');
-    setTimeout(() => navigate('/'), 1200);
   };
 
   return (
@@ -66,17 +78,16 @@ export default function Signup() {
       {/* 왼쪽(회원가입) 영역 */}
       <Box sx={{
         flex: 4,
-        minWidth: 0,
         bgcolor: 'transparent',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        position: 'relative',
         zIndex: 2,
-        py: 0,
       }}>
-        <Typography variant="h2" fontWeight={900} sx={{ mb: 4, color: '#111', letterSpacing: '-2px', fontSize: 56 }}>
+        <Typography variant="h2" fontWeight={900} sx={{
+          mb: 4, color: '#111', letterSpacing: '-2px', fontSize: 56
+        }}>
           Dondoli
         </Typography>
         <Paper elevation={12} sx={{
@@ -225,10 +236,10 @@ export default function Signup() {
           </Link>
         </Box>
       </Box>
-      {/* 오른쪽(노란) 영역 */}
+
+      {/* 오른쪽(디자인 영역) */}
       <Box sx={{
         flex: 6,
-        minWidth: 0,
         bgcolor: '#FFD600',
         position: 'relative',
         display: 'flex',
@@ -237,7 +248,7 @@ export default function Signup() {
         alignItems: 'center',
         overflow: 'hidden'
       }}>
-        {/* 배경 그라데이션/패턴 */}
+        {/* 배경 그라데이션 */}
         <Box sx={{
           position: 'absolute',
           inset: 0,
@@ -245,7 +256,7 @@ export default function Signup() {
           opacity: 0.25,
           zIndex: 0
         }} />
-        {/* 아이콘 일러스트 */}
+        {/* 카드 */}
         <Box sx={{
           width: 500,
           height: 500,
@@ -259,7 +270,6 @@ export default function Signup() {
           position: 'relative',
           zIndex: 1
         }}>
-          {/* 카드 */}
           <lord-icon
             src="https://cdn.lordicon.com/yzctygpq.json"
             trigger="loop"
@@ -275,7 +285,6 @@ export default function Signup() {
               zIndex: 1
             }}
           />
-          {/* 차트 */}
           <lord-icon
             src="https://cdn.lordicon.com/ivayzoru.json"
             trigger="loop"
@@ -291,7 +300,6 @@ export default function Signup() {
               zIndex: 1
             }}
           />
-          {/* 코인 */}
           <lord-icon
             src="https://cdn.lordicon.com/ggihhudh.json"
             trigger="loop"
@@ -307,29 +315,28 @@ export default function Signup() {
               zIndex: 1
             }}
           />
-          {/* 중앙 Glow 원과 ₩ */}
-          <Box
-            sx={{
-              width: 180,
-              height: 180,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, #FFD600 60%, #fffde4 100%)',
-              boxShadow: '0 0 80px 20px #fffde4, 0 8px 32px 0 rgba(0,0,0,0.13)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'absolute',
-              top: 160,
-              left: 160,
-              zIndex: 2
-            }}
-          >
-            <Typography variant="h1" fontWeight={900} sx={{ color: '#fff', opacity: 0.97, textShadow: '0 2px 16px #FFD600' }}>
+          <Box sx={{
+            width: 180,
+            height: 180,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, #FFD600 60%, #fffde4 100%)',
+            boxShadow: '0 0 80px 20px #fffde4, 0 8px 32px 0 rgba(0,0,0,0.13)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'absolute',
+            top: 160,
+            left: 160,
+            zIndex: 2
+          }}>
+            <Typography variant="h1" fontWeight={900} sx={{
+              color: '#fff', opacity: 0.97,
+              textShadow: '0 2px 16px #FFD600'
+            }}>
               ₩
             </Typography>
           </Box>
         </Box>
-        {/* 오른쪽 하단 앱명/설명 */}
         <Box sx={{
           position: 'absolute',
           right: 80,
@@ -337,14 +344,20 @@ export default function Signup() {
           textAlign: 'right',
           zIndex: 2
         }}>
-          <Typography variant="h3" fontWeight={900} sx={{ color: '#fff', mb: 0.5, textShadow: '0 4px 24px #FFD600' }}>
+          <Typography variant="h3" fontWeight={900} sx={{
+            color: '#fff', mb: 0.5,
+            textShadow: '0 4px 24px #FFD600'
+          }}>
             Dondoli
           </Typography>
-          <Typography variant="h6" sx={{ color: '#fff', opacity: 0.97, fontWeight: 600, textShadow: '0 2px 8px #FFD600' }}>
+          <Typography variant="h6" sx={{
+            color: '#fff', opacity: 0.97,
+            fontWeight: 600, textShadow: '0 2px 8px #FFD600'
+          }}>
             부모-자녀 금융 교육
           </Typography>
         </Box>
       </Box>
     </Box>
   );
-} 
+}
