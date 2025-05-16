@@ -242,8 +242,8 @@ const MyPage = () => {
           sx={{
             position: 'absolute',
             right: { xs: 0, md: 40 },
-            bottom: -30,
-            width: { xs: 120, md: 180, lg: 220 },
+            bottom: -142,
+            width: { xs: 160, md: 220, lg: 280 },
             height: 'auto',
             zIndex: 2,
             userSelect: 'none',
