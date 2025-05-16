@@ -1,63 +1,54 @@
 import { useState, useEffect } from 'react';
 import {
-  Container,
-  Grid,
-  Paper,
-  Typography,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  LinearProgress,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Tooltip,
-  Chip,
-  Alert,
-} from '@mui/material';
+  Container, Row, Col, Card, Button, Modal, Form, ProgressBar, Alert
+} from 'react-bootstrap';
+import { BsBarChart, BsPencilSquare } from 'react-icons/bs';
 import {
-  Add as AddIcon,
-  Remove as RemoveIcon,
-  Info as InfoIcon,
-  Savings as SavingsIcon,
-} from '@mui/icons-material';
-import { findChildById, updateChild, getChildrenByParent } from '../utils/localData';
+  findChildById, updateChild, getChildrenByParent
+} from '../utils/localData';
 import { useLocation } from 'react-router-dom';
 
 function Savings() {
   const location = useLocation();
   const user = JSON.parse(sessionStorage.getItem('user'));
   const isParent = user?.role === 'parent';
+
   const [child, setChild] = useState(null);
   const [children, setChildren] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedChildId, setSelectedChildId] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const [newGoal, setNewGoal] = useState({ title: '', targetAmount: '', deadline: '' });
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionType, setTransactionType] = useState('deposit');
   const [error, setError] = useState('');
 
-  // 데이터 불러오기
   useEffect(() => {
     if (isParent) {
-      setChildren(getChildrenByParent(user.id));
+      const kids = getChildrenByParent(user.id);
+      setChildren(kids);
+      if (kids.length > 0) {
+        setChild(kids[0]);
+        setSelectedChildId(kids[0].id);
+      }
     } else {
       setChild(findChildById(user.id));
     }
   }, [user, location.pathname]);
 
-  // 저축 목표 추가
+  const handleChildSelect = (id) => {
+    const selected = children.find(c => c.id === parseInt(id));
+    setChild(selected);
+    setSelectedChildId(id);
+  };
+
   const handleSubmitGoal = () => {
-    setError('');
     if (!newGoal.title || !newGoal.targetAmount || !newGoal.deadline) {
       setError('모든 필드를 입력해주세요.');
       return;
     }
     if (!child) return;
+
     const updated = { ...child };
     updated.savings = [
       ...(updated.savings || []),
@@ -70,41 +61,34 @@ function Savings() {
     ];
     updateChild(updated);
     setChild(updated);
-    setOpenDialog(false);
+    setShowModal(false);
     setNewGoal({ title: '', targetAmount: '', deadline: '' });
+    setError('');
   };
 
-  // 입금/출금
   const handleTransaction = () => {
     setError('');
-    if (!selectedGoal || !transactionAmount || isNaN(transactionAmount) || Number(transactionAmount) <= 0) {
+    const amount = Number(transactionAmount);
+    if (!selectedGoal || isNaN(amount) || amount <= 0) {
       setError('올바른 금액을 입력해주세요.');
       return;
     }
-    if (transactionType === 'deposit' && Number(transactionAmount) > (child?.balance || 0)) {
-      setError('잔액이 부족합니다.');
-      return;
-    }
+
     const updated = { ...child };
     updated.savings = (updated.savings || []).map(goal => {
       if (goal.id === selectedGoal.id) {
-        let newAmount = goal.currentAmount;
-        if (transactionType === 'deposit') {
-          newAmount += Number(transactionAmount);
-        } else {
-          newAmount -= Number(transactionAmount);
-        }
-        if (newAmount < 0) newAmount = 0;
-        if (newAmount > goal.targetAmount) newAmount = goal.targetAmount;
+        let newAmount = transactionType === 'deposit'
+          ? goal.currentAmount + amount
+          : goal.currentAmount - amount;
+        newAmount = Math.max(0, Math.min(newAmount, goal.targetAmount));
         return { ...goal, currentAmount: newAmount };
       }
       return goal;
     });
-    if (transactionType === 'deposit') {
-      updated.balance = (updated.balance || 0) - Number(transactionAmount);
-    } else {
-      updated.balance = (updated.balance || 0) + Number(transactionAmount);
-    }
+
+    if (!updated.balance) updated.balance = 0;
+    updated.balance += (transactionType === 'withdraw' ? amount : -amount);
+
     updateChild(updated);
     setChild(updated);
     setSelectedGoal(null);
@@ -112,164 +96,197 @@ function Savings() {
     setTransactionType('deposit');
   };
 
-  // 부모: 자녀별 저축 목표 보기
-  if (isParent) {
-    return (
-      <Container maxWidth="lg" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '70vh' }}>
-        <Paper sx={{ p: 1, mb: 1, display: 'flex', alignItems: 'center', boxShadow: 1, borderRadius: 1 }}>
-          <SavingsIcon sx={{ mr: 1, fontSize: 32 }} />
-          <Typography variant="h4" component="h1">자녀 저축 목표</Typography>
-        </Paper>
-        <Grid container spacing={1} alignItems="flex-start">
-          {children.length === 0 && (
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 220 }}>
-              <Typography color="text.secondary" sx={{ p: 4, width: '100%', textAlign: 'center' }}>자녀가 없습니다.</Typography>
-            </Grid>
-          )}
-          {children.map(child => (
-            <Grid item xs={12} md={6} key={child.id} sx={{ display: 'flex' }}>
-              <Paper sx={{ p: 1, boxShadow: 1, flexGrow: 1, minHeight: 80, display: 'flex', flexDirection: 'column', borderRadius: 1 }}>
-                <Typography variant="h6">{child.name}</Typography>
-                {(child.savings && child.savings.length > 0) ? child.savings.map(goal => (
-                  <Card key={goal.id} sx={{ my: 1, boxShadow: 1, borderRadius: 1 }}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Typography variant="subtitle1">{goal.title}</Typography>
-                        <Tooltip title="목표 금액과 마감일을 확인하세요">
-                          <IconButton size="small"><InfoIcon /></IconButton>
-                        </Tooltip>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary">목표 금액: {goal.targetAmount.toLocaleString()}원</Typography>
-                      <Typography variant="body2" color="text.secondary">마감일: {goal.deadline}</Typography>
-                      <LinearProgress variant="determinate" value={(goal.currentAmount / goal.targetAmount) * 100} sx={{ height: 10, borderRadius: 5, my: 1 }} />
-                      <Typography variant="body2" color="text.secondary">현재: {goal.currentAmount.toLocaleString()}원 ({((goal.currentAmount / goal.targetAmount) * 100).toFixed(1)}%)</Typography>
-                    </CardContent>
-                  </Card>
-                )) : <Typography color="text.secondary">저축 목표가 없습니다.</Typography>}
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-    );
-  }
-
-  // 자녀: 저축 목표 관리
   return (
-    <Container maxWidth="lg" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '70vh' }}>
-      <Paper sx={{ p: 1, mb: 1, display: 'flex', alignItems: 'center', boxShadow: 1, borderRadius: 1 }}>
-        <SavingsIcon sx={{ mr: 1, fontSize: 32 }} />
-        <Typography variant="h4" component="h1">저축 목표</Typography>
-        <Button variant="contained" color="primary" startIcon={<AddIcon />} sx={{ ml: 2 }} onClick={() => setOpenDialog(true)}>
-          새 목표 만들기
-        </Button>
-      </Paper>
-      <Grid container spacing={1} alignItems="flex-start">
-        {(child?.savings && child.savings.length > 0) ? child.savings.map(goal => (
-          <Grid item xs={12} md={6} key={goal.id} sx={{ display: 'flex' }}>
-            <Card sx={{ boxShadow: 1, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 80, borderRadius: 1 }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Typography variant="h6">{goal.title}</Typography>
-                  <Tooltip title="목표 금액과 마감일을 확인하세요">
-                    <IconButton size="small"><InfoIcon /></IconButton>
-                  </Tooltip>
-                </Box>
-                <Typography variant="body2" color="text.secondary">목표 금액: {goal.targetAmount.toLocaleString()}원</Typography>
-                <Typography variant="body2" color="text.secondary">마감일: {goal.deadline}</Typography>
-                <LinearProgress variant="determinate" value={(goal.currentAmount / goal.targetAmount) * 100} sx={{ height: 10, borderRadius: 5, my: 1 }} />
-                <Typography variant="body2" color="text.secondary">현재: {goal.currentAmount.toLocaleString()}원 ({((goal.currentAmount / goal.targetAmount) * 100).toFixed(1)}%)</Typography>
-                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                  <Button variant="outlined" color="primary" startIcon={<AddIcon />} onClick={() => { setSelectedGoal(goal); setTransactionType('deposit'); }}>
-                    입금
-                  </Button>
-                  <Button variant="outlined" color="secondary" startIcon={<RemoveIcon />} onClick={() => { setSelectedGoal(goal); setTransactionType('withdraw'); }} disabled={goal.currentAmount <= 0}>
-                    출금
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        )) : (
-          <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: 220 }}>
-            <Typography color="text.secondary" sx={{ p: 4, width: '100%', textAlign: 'center' }}>저축 목표가 없습니다.</Typography>
-          </Grid>
-        )}
-      </Grid>
+ <Container
+  fluid
+  style={{
+    paddingTop: '72px', // <-- 여기 명시적으로 고정값으로! 변수 말고!
+    backgroundColor: '#fffbe9',
+    minHeight: '100vh',
+    boxSizing: 'border-box',
+    position: 'relative',
+    zIndex: 0, // Navigation보다 낮아도 무관, 안 겹치기만 하면 됨
+  }}
+>
 
-      {/* New Goal Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>새 저축 목표 만들기</DialogTitle>
-        <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <Box sx={{ mt: 2 }}>
-            <TextField
-              fullWidth
-              label="목표 이름"
-              name="title"
-              value={newGoal.title}
-              onChange={e => setNewGoal(f => ({ ...f, title: e.target.value }))}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="목표 금액"
-              name="targetAmount"
-              type="number"
-              value={newGoal.targetAmount}
-              onChange={e => setNewGoal(f => ({ ...f, targetAmount: e.target.value }))}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="마감일"
-              name="deadline"
-              type="date"
-              value={newGoal.deadline}
-              onChange={e => setNewGoal(f => ({ ...f, deadline: e.target.value }))}
-              margin="normal"
-              required
-              InputLabelProps={{ shrink: true }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>취소</Button>
-          <Button onClick={handleSubmitGoal} variant="contained" color="primary">만들기</Button>
-        </DialogActions>
-      </Dialog>
 
-      {/* Transaction Dialog */}
-      <Dialog open={!!selectedGoal} onClose={() => setSelectedGoal(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>{selectedGoal?.title} - {selectedGoal?.currentAmount?.toLocaleString()}원</DialogTitle>
-        <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <TextField
-            fullWidth
-            label="금액"
-            type="number"
-            value={transactionAmount}
-            onChange={e => setTransactionAmount(e.target.value)}
-            margin="normal"
-            required
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedGoal(null)}>취소</Button>
-          <Button
-            onClick={handleTransaction}
-            variant="contained"
-            color={transactionType === 'deposit' ? 'primary' : 'secondary'}
-            disabled={!transactionAmount || parseInt(transactionAmount) <= 0 || (transactionType === 'withdraw' && parseInt(transactionAmount) > selectedGoal?.currentAmount)}
+      <header className="mb-4">
+        <h4 className="d-flex align-items-center gap-2 text-warning fw-bold">
+          <BsBarChart /> 저금 요약
+        </h4>
+        <h5 className="fw-bold">
+          {isParent ? '자녀의 저금 목표를 도와주세요' : `${child?.name}의 저금 현황`}
+        </h5>
+        {isParent && (
+          <Form.Select
+            className="my-3 rounded-pill w-auto"
+            value={selectedChildId}
+            onChange={(e) => handleChildSelect(e.target.value)}
           >
-            {transactionType === 'deposit' ? '입금' : '출금'}
+            {children.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </Form.Select>
+        )}
+      </header>
+
+      <section className="mb-4">
+        <Row>
+          <Col md={6}>
+            <Card className="mb-3 shadow-sm rounded-4 border-0">
+              <Card.Body>
+                <h6 className="text-muted">전체 잔액</h6>
+                <h4 className="fw-bold text-warning">{child?.balance?.toLocaleString() || 0} 원</h4>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={6}>
+            <Card className="mb-3 shadow-sm rounded-4 border-0">
+              <Card.Body>
+                <h6 className="text-muted">저금 목표 수</h6>
+                <h4 className="fw-bold">{child?.savings?.length || 0} 개</h4>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </section>
+
+      <section className="mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5 className="fw-bold d-flex align-items-center gap-2 text-dark">
+            <BsPencilSquare /> 저금 목표
+          </h5>
+          {!isParent && (
+            <Button
+              variant="warning"
+              className="fw-bold rounded-pill px-4"
+              onClick={() => setShowModal(true)}
+            >
+              새 목표 만들기
+            </Button>
+          )}
+        </div>
+
+        {(child?.savings || []).length === 0 && (
+          <p className="text-muted">아직 저금 목표가 없습니다.</p>
+        )}
+
+        {(child?.savings || []).map(goal => (
+          <Card key={goal.id} className="mb-3 rounded-4 shadow-sm border-0">
+            <Card.Body>
+              <h6 className="fw-bold mb-1">{goal.title}</h6>
+              <small className="text-muted">목표 금액: {goal.targetAmount.toLocaleString()}원</small>
+              <ProgressBar
+                now={(goal.currentAmount / goal.targetAmount) * 100}
+                className="my-3 rounded-pill"
+                style={{ height: 12 }}
+                variant="warning"
+              />
+              <div className="d-flex justify-content-between align-items-center">
+                <span className="text-muted">현재: {goal.currentAmount.toLocaleString()}원</span>
+                <Button
+                  size="sm"
+                  variant="outline-warning"
+                  className="rounded-pill fw-bold px-3"
+                  onClick={() => setSelectedGoal(goal)}
+                >
+                  {isParent ? '입금 도와주기' : '입금 / 출금'}
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        ))}
+      </section>
+
+      {/* 새 목표 생성 모달 */}
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>새 저금 목표 만들기</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {error && <Alert variant="danger" className="rounded-4">{error}</Alert>}
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>목표 이름</Form.Label>
+              <Form.Control
+                type="text"
+                className="rounded-pill bg-light border-0 shadow-sm"
+                value={newGoal.title}
+                onChange={e => setNewGoal(g => ({ ...g, title: e.target.value }))}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>목표 금액</Form.Label>
+              <Form.Control
+                type="number"
+                className="rounded-pill bg-light border-0 shadow-sm"
+                value={newGoal.targetAmount}
+                onChange={e => setNewGoal(g => ({ ...g, targetAmount: e.target.value }))}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>마감일</Form.Label>
+              <Form.Control
+                type="date"
+                className="rounded-pill bg-light border-0 shadow-sm"
+                value={newGoal.deadline}
+                onChange={e => setNewGoal(g => ({ ...g, deadline: e.target.value }))}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>취소</Button>
+          <Button variant="warning" className="rounded-pill px-4 fw-bold" onClick={handleSubmitGoal}>
+            목표 저장
           </Button>
-        </DialogActions>
-      </Dialog>
+        </Modal.Footer>
+      </Modal>
+
+      {/* 입금 / 출금 모달 */}
+      <Modal show={!!selectedGoal} onHide={() => setSelectedGoal(null)}>
+        <Modal.Header closeButton>
+          <Modal.Title>{selectedGoal?.title} - 현재 {selectedGoal?.currentAmount.toLocaleString()}원</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {error && <Alert variant="danger" className="rounded-4">{error}</Alert>}
+          <Form.Group className="mb-3">
+            <Form.Label>금액</Form.Label>
+            <Form.Control
+              type="number"
+              className="rounded-pill bg-light border-0 shadow-sm"
+              value={transactionAmount}
+              onChange={e => setTransactionAmount(e.target.value)}
+            />
+          </Form.Group>
+          {!isParent && (
+            <Form.Group className="mb-3">
+              <Form.Label>유형</Form.Label>
+              <Form.Select
+                className="rounded-pill bg-light border-0 shadow-sm"
+                value={transactionType}
+                onChange={e => setTransactionType(e.target.value)}
+              >
+                <option value="deposit">입금</option>
+                <option value="withdraw">출금</option>
+              </Form.Select>
+            </Form.Group>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setSelectedGoal(null)}>취소</Button>
+          <Button
+            variant="warning"
+            className="rounded-pill px-4 fw-bold"
+            onClick={handleTransaction}
+            disabled={!transactionAmount || Number(transactionAmount) <= 0}
+          >
+            {isParent ? '입금 도와주기' : transactionType === 'deposit' ? '입금' : '출금'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 }
 
-export default Savings; 
+export default Savings;
