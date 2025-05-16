@@ -118,11 +118,11 @@ function Store() {
   const purchaseHistory = (child?.purchases || []).slice().reverse();
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4, minHeight: '80vh' }}>
-      <Grid container spacing={3} alignItems="flex-start">
+    <Container maxWidth="lg" sx={{ pt: '64px', mt: 2, mb: 2, minHeight: '70vh' }}>
+      <Grid container spacing={1} alignItems="flex-start">
         {/* Header */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: 2 }}>
+          <Paper sx={{ p: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: 1, borderRadius: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <ShoppingCartIcon sx={{ mr: 1, fontSize: 32 }} />
               <Typography variant="h4" component="h1">
@@ -141,17 +141,17 @@ function Store() {
         </Grid>
         {/* Tabs */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 2, boxShadow: 1 }}>
+          <Paper sx={{ p: 1, boxShadow: 1, borderRadius: 1 }}>
             <Tabs value={tab} onChange={(_, v) => setTab(v)} indicatorColor="primary" textColor="primary">
               <Tab label="상품 구매" />
               <Tab label="구매 내역" />
             </Tabs>
             {tab === 0 && (
-              <Box sx={{ mt: 3 }}>
-                <Grid container spacing={3} alignItems="flex-start">
+              <Box sx={{ mt: 1 }}>
+                <Grid container spacing={1} alignItems="flex-start">
                   {STORE_ITEMS.map((item) => (
                     <Grid item xs={12} sm={6} md={4} lg={3} key={item.id} sx={{ display: 'flex' }}>
-                      <Card sx={{ boxShadow: 2, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 320 }}>
+                      <Card sx={{ boxShadow: 1, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 80, borderRadius: 1 }}>
                         <CardMedia
                           component="img"
                           height="140"
@@ -206,7 +206,7 @@ function Store() {
               </Box>
             )}
             {tab === 1 && (
-              <Box sx={{ mt: 3, minHeight: 320, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+              <Box sx={{ mt: 1, minHeight: 80, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
                 <Typography variant="h6" sx={{ mb: 2 }}>구매 내역</Typography>
                 {purchaseHistory.length > 0 ? (
                   <List>

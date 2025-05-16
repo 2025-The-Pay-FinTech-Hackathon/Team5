@@ -1,5 +1,5 @@
 import { Container, Typography, Grid, Card, CardContent, Chip, Box } from '@mui/material';
-import { BADGE_TYPES } from "../../mwoni-prototype/constants/badgeTypes";
+import { BADGE_TYPES } from "../constants/badgeTypes";
 
 import { findChildById } from '../utils/localData';
 

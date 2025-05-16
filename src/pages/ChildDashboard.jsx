@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { checkAndUpdateBadges } from '../utils/badgeUtils';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { checkAndUpdateBadges } from '../utils/badgeUtils';
+
 import {
   Container,
   Grid,
@@ -52,6 +53,8 @@ function ChildDashboard() {
       setChild(findChildById(user.id));
     }
   }, [user, location.pathname]);
+
+
 
   // 최근 활동(미션, 퀴즈 등)
   const recentActivities = [
@@ -136,7 +139,7 @@ function ChildDashboard() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4, minHeight: '80vh' }}>
+    <Container maxWidth="lg" sx={{ pt: '64px', mt: 4, mb: 4, minHeight: '80vh' }}>
       <Grid container spacing={3} alignItems="flex-start">
         {/* Header with Balance */}
         <Grid item xs={12}>
@@ -207,15 +210,15 @@ function ChildDashboard() {
               메뉴
             </Typography>
             <List>
-              <ListItem button onClick={() => navigate('/child/quiz')}>
+              <ListItem button onClick={() => window.location.href = '/child/quiz'}>
                 <SchoolIcon sx={{ mr: 2 }} />
                 <ListItemText primary="금융 퀴즈" />
               </ListItem>
-              <ListItem button onClick={() => navigate('/child/missions')}>
+              <ListItem button onClick={() => window.location.href = '/child/missions'}>
                 <EmojiEventsIcon sx={{ mr: 2 }} />
                 <ListItemText primary="미션" />
               </ListItem>
-              <ListItem button onClick={() => navigate('/child/store')}>
+              <ListItem button onClick={() => window.location.href = '/child/store'}>
                 <StoreIcon sx={{ mr: 2 }} />
                 <ListItemText primary="상점" />
               </ListItem>

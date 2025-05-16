@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -13,6 +14,9 @@ import {
   ListItemText,
   Box,
   Divider,
+  Menu,
+  MenuItem,
+  Avatar,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -25,12 +29,18 @@ import {
   ListAlt as ListAltIcon,
   Favorite as FavoriteIcon,
   Person as PersonIcon,
+  AccountCircle,
+  Message,
+  Analytics,
+  People,
+  Notifications,
 } from '@mui/icons-material';
 
 function Navigation({ user, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = React.useState(null);
 
   const isParent = user?.role === 'parent';
 
@@ -60,7 +70,7 @@ function Navigation({ user, onLogout }) {
 
   const handleNavigation = (path) => {
     if (location.pathname !== path) {
-      navigate(path);
+      window.location.href = path;
     }
     setDrawerOpen(false);
   };
@@ -70,9 +80,24 @@ function Navigation({ user, onLogout }) {
     navigate('/');
   };
 
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    handleClose();
+    handleLogoutClick();
+  };
+
+  const prefix = isParent ? '/parent' : '/child';
+
   return (
     <>
-      <AppBar position="static" sx={{ borderRadius: 0, boxShadow: 2 }}>
+      <AppBar position="fixed" sx={{ borderRadius: 0, boxShadow: 2 }}>
         <Toolbar>
           <IconButton
             color="inherit"
@@ -82,15 +107,96 @@ function Navigation({ user, onLogout }) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            MwoniMoney
+          <Typography variant="h6" noWrap component="div">
+            Dondoli
           </Typography>
           <Typography variant="body1" sx={{ mr: 2 }}>
             {user?.name}님
           </Typography>
-          <Button color="inherit" onClick={handleLogoutClick} sx={{ fontWeight: 600 }}>
-            로그아웃
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton
+              color="inherit"
+              onClick={() => navigate(`${prefix}/notifications`)}
+            >
+              <Notifications />
+            </IconButton>
+
+            <Button
+              color="inherit"
+              startIcon={<DashboardIcon />}
+              onClick={() => navigate(prefix)}
+            >
+              대시보드
+            </Button>
+
+            <Button
+              color="inherit"
+              startIcon={<SchoolIcon />}
+              onClick={() => navigate(`${prefix}/education`)}
+            >
+              금융 교육
+            </Button>
+
+            <Button
+              color="inherit"
+              startIcon={<Message />}
+              onClick={() => navigate(`${prefix}/messages`)}
+            >
+              메시지
+            </Button>
+
+            <Button
+              color="inherit"
+              startIcon={<Analytics />}
+              onClick={() => navigate(`${prefix}/analytics`)}
+            >
+              성과 분석
+            </Button>
+
+            <Button
+              color="inherit"
+              startIcon={<People />}
+              onClick={() => navigate(`${prefix}/social`)}
+            >
+              소셜
+            </Button>
+
+            <IconButton
+              size="large"
+              aria-label="account of current user"
+              aria-controls="menu-appbar"
+              aria-haspopup="true"
+              onClick={handleMenu}
+              color="inherit"
+            >
+              <Avatar sx={{ width: 32, height: 32 }}>
+                {user?.name?.[0] || <AccountCircle />}
+              </Avatar>
+            </IconButton>
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorEl}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              keepMounted
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              open={Boolean(anchorEl)}
+              onClose={handleClose}
+            >
+              <MenuItem onClick={() => {
+                handleClose();
+                navigate('/mypage');
+              }}>
+                마이페이지
+              </MenuItem>
+              <MenuItem onClick={handleLogout}>로그아웃</MenuItem>
+            </Menu>
+          </Box>
         </Toolbar>
       </AppBar>
 
