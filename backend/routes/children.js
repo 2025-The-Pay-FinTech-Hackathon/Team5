@@ -1,0 +1,172 @@
+const express = require('express');
+const router = express.Router();
+const Child = require('../models/Child');
+const User = require('../models/User');
+
+// [GET] 특정 부모의 자녀 목록 조회
+router.get('/parent/:parentId', async (req, res) => {
+  try {
+    const children = await Child.find({ parentId: req.params.parentId });
+    res.json(children);
+  } catch (error) {
+    console.error('자녀 목록 조회 실패:', error);
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+
+// POST /api/children - 자녀 추가 및 로그인 가능하게 User에도 등록
+router.post('/', async (req, res) => {
+  const { name, email, password, parentId } = req.body;
+
+  if (!name || !email || !password || !parentId) {
+    return res.status(400).json({ error: '모든 항목을 입력해주세요.' });
+  }
+
+  try {
+    // 이메일 중복 검사 (Child + User 모델 모두 확인)
+    const existingChild = await Child.findOne({ email });
+    const existingUser = await User.findOne({ email });
+    if (existingChild || existingUser) {
+      return res.status(409).json({ error: '이미 존재하는 이메일입니다.' });
+    }
+
+    // 1. Child 모델에 자녀 정보 저장
+    const newChild = new Child({
+      name,
+      email,
+      password,
+      parentId,
+      balance: 0,
+      creditScore: 700,
+      points: 0,
+      missions: [],
+      savings: [],
+      transactions: [],
+      ledgers: [],
+      loans: [],
+      loanRequests: [],
+    });
+    await newChild.save();
+
+    // 2. User 모델에도 자녀 등록 (로그인 가능하게)
+    const newUser = new User({
+      name,
+      email,
+      password,
+      role: 'child',
+      parentId: parentId || req.body.parentId,
+    });
+    await newUser.save();
+
+    res.status(201).json({ message: '자녀가 성공적으로 등록되었습니다.', child: newChild });
+  } catch (err) {
+    console.error('자녀 추가 실패:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// POST /api/children/:childId/allowance
+router.post('/:childId/allowance', async (req, res) => {
+  const { childId } = req.params;
+  const { amount } = req.body;
+
+  if (!amount || isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ error: '유효한 금액을 입력해주세요.' });
+  }
+
+  try {
+    const child = await Child.findById(childId);
+    if (!child) {
+      return res.status(404).json({ error: '자녀를 찾을 수 없습니다.' });
+    }
+
+    // 잔액 증가
+    child.balance = (child.balance || 0) + Number(amount);
+
+    // ledger 추가
+    const ledgerEntry = {
+      type: '입금',
+      amount: Number(amount),
+      date: new Date().toISOString().slice(0, 10),
+      memo: '부모 입금',
+    };
+    child.ledgers = [ledgerEntry, ...(child.ledgers || [])];
+
+    await child.save();
+
+    res.json({ message: '용돈이 성공적으로 지급되었습니다.', child });
+  } catch (err) {
+    console.error('용돈 지급 실패:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// routes/children.js
+router.get('/:childId', async (req, res) => {
+  try {
+    const child = await Child.findById(req.params.childId);
+    if (!child) return res.status(404).json({ error: '자녀를 찾을 수 없습니다.' });
+    res.json(child);
+  } catch (err) {
+    console.error('자녀 정보 조회 실패:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+// ✅ 자녀 삭제 라우터 (Child + User 동시에 삭제)
+router.delete('/:id', async (req, res) => {
+  try {
+    const child = await Child.findByIdAndDelete(req.params.id);
+    if (!child) return res.status(404).json({ error: '자녀를 찾을 수 없습니다.' });
+
+    // User 컬렉션에서 자녀 정보도 함께 삭제
+    await User.findOneAndDelete({ email: child.email, role: 'child' });
+
+    res.json({ message: '자녀 삭제 완료' });
+  } catch (err) {
+    console.error('자녀 삭제 실패:', err);
+    res.status(500).json({ error: '삭제 중 오류 발생' });
+  }
+});
+
+// GET /api/children/:parentId/transactions
+router.get('/:parentId/transactions', async (req, res) => {
+  const { parentId } = req.params;
+
+  try {
+    const children = await Child.find({ parentId });
+
+    const allTransactions = children.flatMap(child =>
+      (child.ledgers || []).map(ledger => ({
+        _id: ledger.id || `${child._id}-${Math.random()}`,
+        childId: child._id,
+        childName: child.name,
+        type: ledger.type,
+        amount: ledger.amount,
+        date: ledger.date,
+        memo: ledger.memo,
+      }))
+    ).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    res.json(allTransactions);
+  } catch (err) {
+    console.error('거래 내역 조회 실패:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+router.put('/:id/points', async (req, res) => {
+  try {
+    const child = await Child.findById(req.params.id);
+    if (!child) return res.status(404).json({ error: '자녀를 찾을 수 없습니다.' });
+    child.points += req.body.amount;
+    await child.save();
+    res.json({ message: '포인트가 추가되었습니다.', points: child.points });
+  } catch (err) {
+    res.status(500).json({ error: '포인트 추가 실패', details: err });
+  }
+});
+
+
+module.exports = router;
