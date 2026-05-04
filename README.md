@@ -39,7 +39,7 @@ Dondoli는 부모와 자녀가 함께 사용할 수 있는 금융 교육 앱입�
 1. 저장소 클론
 ```bash
 git clone https://github.com/2025-The-Pay-FinTech-Hackathon/Team5.git
-cd Hackathon_2025
+cd Team5
 ```
 
 2. 프론트엔드 의존성 설치
