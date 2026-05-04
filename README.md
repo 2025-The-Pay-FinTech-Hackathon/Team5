@@ -38,7 +38,7 @@ Dondoli는 부모와 자녀가 함께 사용할 수 있는 금융 교육 앱입�
 ### 설치
 1. 저장소 클론
 ```bash
-git clone https://github.com/ripplelover/Hackathon_2025.git
+git clone https://github.com/2025-The-Pay-FinTech-Hackathon/Team5.git
 cd Hackathon_2025
 ```
 
@@ -81,7 +81,7 @@ npm run dev
 ```bash
 cd ChatbotAI
 .\venv\Scripts\Activate.ps1
-python test.py "eps가 뭐야?"
+ex) python test.py "eps가 뭐야?"
 ```
 
 ### 백엔드 & 챗봇 연결
