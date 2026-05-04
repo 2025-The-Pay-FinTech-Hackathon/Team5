@@ -23,6 +23,7 @@ Dondoli는 부모와 자녀가 함께 사용할 수 있는 금융 교육 앱입�
 ## 기술 스택
 
 - 프론트엔드: React, Material-UI
+- 백엔드: Node.js
 - 상태 관리: React Hooks
 - 라우팅: React Router
 - 스타일링: Material-UI, Emotion
@@ -32,23 +33,62 @@ Dondoli는 부모와 자녀가 함께 사용할 수 있는 금융 교육 앱입�
 ### 필수 조건
 - Node.js (v14 이상)
 - npm 또는 yarn
+- Python 3.8 이상
 
 ### 설치
 1. 저장소 클론
 ```bash
-git clone https://github.com/yourusername/dondoli.git
-cd dondoli
+git clone https://github.com/ripplelover/Hackathon_2025.git
+cd Hackathon_2025
 ```
 
-2. 의존성 설치
+2. 프론트엔드 의존성 설치
 ```bash
 npm install
 ```
 
-3. 개발 서버 실행
+3. 백엔드 의존성 설치
+```bash
+cd backend
+npm install
+cd ..
+```
+
+4. 챗봇 모델용 Python 가상환경 설치
+```bash
+cd ChatbotAI
+python -m venv venv
+.\venv\Scripts\Activate.ps1    # Windows PowerShell
+# 또는 .\venv\Scripts\activate    # Git Bash/WSL
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+cd ..
+```
+
+### 실행
+1. 프론트엔드 실행
 ```bash
 npm run dev
 ```
+
+2. 백엔드 실행
+```bash
+cd backend
+npm run dev
+```
+
+3. 챗봇 모델 확인
+```bash
+cd ChatbotAI
+.\venv\Scripts\Activate.ps1
+python test.py "eps가 뭐야?"
+```
+
+### 백엔드 & 챗봇 연결
+- 백엔드 `server.js`에서 ChatbotAI 스크립트를 호출하도록 구성되어 있습니다.
+- 프론트엔드 금융 챗봇UI에서 질문하면 백엔드가 `ChatbotAI/test.py`를 실행하고 결과를 반환합니다。
+- 백엔드는 `http://localhost:8000/api/chat`로 질의합니다。
+
 
 ## 프로젝트 구조
 ```

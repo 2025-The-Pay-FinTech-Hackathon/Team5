@@ -1,136 +1,44 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline, GlobalStyles } from '@mui/material';
-import { useState } from 'react';
-import lottie from 'lottie-web';
-import { defineElement } from 'lord-icon-element';
-
-// Components
-import Navigation from './components/Navigation';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, CssBaseline, GlobalStyles } from '@mui/material';
+import { Suspense, lazy, useEffect, useState } from 'react';
+import { lightTheme } from './theme/theme';
+import { AuthProvider } from './contexts/AuthContext';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import ErrorMessage from './components/common/ErrorMessage';
-import NotificationCenter from './components/notifications/NotificationCenter';
-import MessageCenter from './components/messages/MessageCenter';
-import FinancialEducation from './components/education/FinancialEducation';
-import PerformanceAnalytics from './components/analytics/PerformanceAnalytics';
-import SocialFeatures from './components/social/SocialFeatures';
+import { connectRealtime } from './services/realtime';
+import { loadNotifications } from './utils/notificationUtils';
 
-// Pages
-import Login from './pages/Login';
-import ParentDashboard from './pages/ParentDashboard';
-import ChildDashboard from './pages/ChildDashboard';
-import Quiz from './pages/Quiz';
-import Missions from './pages/Missions';
-import Savings from './pages/Savings';
-import Store from './pages/Store';
-import Signup from './pages/Signup';
-import MyPage from './pages/MyPage';
-import Ledger from './pages/Ledger';
-import Wishlist from './pages/Wishlist';
-import BadgePage from './pages/BadgePage';
-import MemoryGame from './pages/MemoryGame';
-import ParentReportPage from './pages/ParentReportPage';
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const ParentLayout = lazy(() => import('./layouts/ParentLayout'));
+const ChildLayout = lazy(() => import('./layouts/ChildLayout'));
+const ParentDashboard = lazy(() => import('./pages/ParentDashboard'));
+const ChildDashboard = lazy(() => import('./pages/ChildDashboard'));
+const Quiz = lazy(() => import('./pages/Quiz'));
+const Missions = lazy(() => import('./pages/Missions'));
+const Savings = lazy(() => import('./pages/Savings'));
+const Store = lazy(() => import('./pages/Store'));
+const MyPage = lazy(() => import('./pages/MyPage'));
+const Ledger = lazy(() => import('./pages/Ledger'));
+const Wishlist = lazy(() => import('./pages/Wishlist'));
+const BadgePage = lazy(() => import('./pages/BadgePage'));
+const MemoryGame = lazy(() => import('./pages/MemoryGame'));
+const ParentReportPage = lazy(() => import('./pages/ParentReportPage'));
+const MessageCenter = lazy(() => import('./components/message/MessageCenter'));
+const FinancialEducation = lazy(() => import('./components/education/FinancialEducation'));
+const PerformanceAnalytics = lazy(() => import('./components/analytics/PerformanceAnalytics'));
+const SocialFeatures = lazy(() => import('./components/social/SocialFeatures'));
+const LoanManagement = lazy(() => import('./components/parent/LoanManagement'));
+const LoanApplication = lazy(() => import('./components/child/LoanApplication'));
+const LazyFirestoreProvider = lazy(() =>
+  import('./contexts/FirestoreContext').then((module) => ({
+    default: module.FirestoreProvider,
+  })),
+);
 
-// Modern pastel theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#6C63FF', // 파스텔 블루퍼플
-      light: '#A393F9',
-      dark: '#4E54C8',
-      contrastText: '#fff',
-    },
-    secondary: {
-      main: '#F67280', // 파스텔 핑크
-      light: '#FFB7B2',
-      dark: '#C06C84',
-      contrastText: '#fff',
-    },
-    background: {
-      default: '#F8F8FF', // 밝은 파스텔 배경
-      paper: '#FFFFFF',
-    },
-    success: {
-      main: '#43E97B',
-      contrastText: '#fff',
-    },
-    info: {
-      main: '#5BC0EB',
-      contrastText: '#fff',
-    },
-  },
-  shape: {
-    borderRadius: 16,
-  },
-  typography: {
-    fontFamily: '"Noto Sans KR", "Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 700,
-      letterSpacing: '-0.5px',
-    },
-    h6: {
-      fontWeight: 600,
-    },
-    button: {
-      textTransform: 'none',
-      fontWeight: 600,
-      letterSpacing: '0.5px',
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          boxShadow: '0 2px 8px 0 rgba(108,99,255,0.08)',
-          transition: 'all 0.2s',
-          '&:hover': {
-            boxShadow: '0 4px 16px 0 rgba(108,99,255,0.16)',
-            transform: 'translateY(-2px) scale(1.03)',
-          },
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 18,
-          boxShadow: '0 2px 16px 0 rgba(108,99,255,0.07)',
-          transition: 'all 0.2s',
-          '&:hover': {
-            boxShadow: '0 6px 24px 0 rgba(108,99,255,0.13)',
-            transform: 'translateY(-2px) scale(1.01)',
-          },
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          borderRadius: 18,
-        },
-      },
-    },
-    MuiDialog: {
-      styleOverrides: {
-        paper: {
-          borderRadius: 20,
-        },
-      },
-    },
-    MuiTabs: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          background: '#F3F3FA',
-        },
-        indicator: {
-          height: 4,
-          borderRadius: 4,
-        },
-      },
-    },
-  },
-});
+function FirestoreRoute({ children }) {
+  return <LazyFirestoreProvider>{children}</LazyFirestoreProvider>;
+}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -141,12 +49,12 @@ function App() {
     try {
       setLoading(true);
       setError(null);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
       setUser(userData);
       sessionStorage.setItem('user', JSON.stringify(userData));
+      window.dispatchEvent(new Event('auth:user-changed'));
     } catch (err) {
-      setError('로그인 중 오류가 발생했습니다.');
+      console.error('Login failed:', err);
+      setError('Login failed.');
     } finally {
       setLoading(false);
     }
@@ -155,313 +63,146 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     sessionStorage.removeItem('user');
+    window.dispatchEvent(new Event('auth:user-changed'));
   };
 
-  // Check for stored user data on initial load
-  useState(() => {
-    const storedUser = sessionStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+  useEffect(() => {
+    const syncStoredUser = () => {
+      const storedUser = sessionStorage.getItem('user');
+
+      if (!storedUser) {
+        setUser(null);
+        return;
+      }
+
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.warn('Failed to restore stored user:', err);
+        sessionStorage.removeItem('user');
+        setUser(null);
+      }
+    };
+
+    syncStoredUser();
+
+    window.addEventListener('auth:user-changed', syncStoredUser);
+    window.addEventListener('storage', syncStoredUser);
+
+    return () => {
+      window.removeEventListener('auth:user-changed', syncStoredUser);
+      window.removeEventListener('storage', syncStoredUser);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return undefined;
+
+    loadNotifications(user.id);
+    return connectRealtime(user.id);
+  }, [user?.id]);
 
   if (loading) {
     return <LoadingSpinner />;
   }
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={lightTheme}>
       <CssBaseline />
-      <GlobalStyles styles={{
-        body: { background: '#F8F8FF' },
-        '.MuiPaper-root': { background: '#fff' },
-      }} />
-      <Router>
-        {error && <ErrorMessage title="오류" message={error} />}
-        <Routes>
-          <Route 
-            path="/" 
-            element={
-              user ? (
-                <Navigate to={user.role === 'parent' ? '/parent' : '/child'} replace />
-              ) : (
-                <Login onLogin={handleLogin} />
-              )
-            } 
-          />
-          <Route 
-            path="/signup" 
-            element={<Signup />} 
-          />
-          {/* Parent Routes */}
-          <Route
-            path="/parent"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <NotificationCenter />
-                  <ParentDashboard />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/messages"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <MessageCenter />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/education"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <FinancialEducation />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/analytics"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <PerformanceAnalytics />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/social"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <SocialFeatures />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          {/* Child Routes */}
-          <Route
-            path="/child"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <NotificationCenter />
-                  <ChildDashboard />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/messages"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <MessageCenter />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/education"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <FinancialEducation />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/analytics"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <PerformanceAnalytics />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/social"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <SocialFeatures />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/missions"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Missions />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/parent/savings"
-            element={
-              user?.role === 'parent' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Savings />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/quiz"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Quiz />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/missions"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Missions />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/savings"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Savings />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/child/store"
-            element={
-              user?.role === 'child' ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Store />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/mypage"
-            element={
-              user ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <MyPage user={user} onUserUpdate={setUser} />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/ledger"
-            element={
-              user ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Ledger />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route
-            path="/badges"
-            element={
-              user ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <BadgePage />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route path="/memory-game" element={<MemoryGame />} />
-          <Route path="/parent/report" element={<ParentReportPage />} />
-          <Route
-            path="/wishlist"
-            element={
-              user ? (
-                <>
-                  <Navigation user={user} onLogout={handleLogout} />
-                  <Wishlist />
-                </>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+      <GlobalStyles
+        styles={{
+          body: { background: '#F8F8FF' },
+          '.MuiPaper-root': { background: '#fff' },
+        }}
+      />
+      <AuthProvider>
+        <Router>
+          {error && <ErrorMessage title="Error" message={error} />}
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  user ? (
+                    <Navigate to={user.role === 'parent' ? '/parent' : '/child'} replace />
+                  ) : (
+                    <Login onLogin={handleLogin} />
+                  )
+                }
+              />
+              <Route path="/signup" element={<Signup />} />
+
+              <Route
+                path="/parent/*"
+                element={
+                  user?.role === 'parent' ? (
+                    <ParentLayout user={user} onLogout={handleLogout} />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              >
+                <Route index element={<ParentDashboard />} />
+                <Route path="messages" element={<MessageCenter />} />
+                <Route path="education" element={<FinancialEducation />} />
+                <Route path="analytics" element={<PerformanceAnalytics />} />
+                <Route path="social" element={<SocialFeatures />} />
+                <Route path="missions" element={<Missions />} />
+                <Route path="savings" element={<Savings />} />
+                <Route path="report" element={<ParentReportPage />} />
+                <Route path="mypage" element={<MyPage user={user} onUserUpdate={setUser} onLogout={handleLogout} />} />
+                <Route path="ledger" element={<Ledger />} />
+                <Route path="badges" element={<BadgePage />} />
+                <Route path="wishlist" element={<Wishlist />} />
+                <Route
+                  path="loan"
+                  element={
+                    <FirestoreRoute>
+                      <LoanManagement />
+                    </FirestoreRoute>
+                  }
+                />
+              </Route>
+
+              <Route
+                path="/child/*"
+                element={
+                  user?.role === 'child' ? (
+                    <ChildLayout user={user} onLogout={handleLogout} />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              >
+                <Route index element={<ChildDashboard />} />
+                <Route path="messages" element={<MessageCenter />} />
+                <Route path="education" element={<FinancialEducation />} />
+                <Route path="analytics" element={<PerformanceAnalytics />} />
+                <Route path="social" element={<SocialFeatures />} />
+                <Route path="quiz" element={<Quiz />} />
+                <Route path="missions" element={<Missions />} />
+                <Route path="savings" element={<Savings />} />
+                <Route path="store" element={<Store />} />
+                <Route path="mypage" element={<MyPage user={user} onUserUpdate={setUser} onLogout={handleLogout} />} />
+                <Route path="ledger" element={<Ledger />} />
+                <Route path="badges" element={<BadgePage />} />
+                <Route path="wishlist" element={<Wishlist />} />
+                <Route
+                  path="loan"
+                  element={
+                    <FirestoreRoute>
+                      <LoanApplication />
+                    </FirestoreRoute>
+                  }
+                />
+              </Route>
+
+              <Route path="/memory-game" element={<MemoryGame />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

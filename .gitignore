@@ -31,6 +31,9 @@ yarn-error.log*
 logs
 *.log
 
+# Local backend data
+backend/data/db.json
+
 node_modules
 dist
 dist-ssr
@@ -46,3 +49,24 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+venv/
+.venv/
+ChatbotAI/venv/
+ChatbotAI/.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python build/cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+*.egg-info/
+
+# Hugging Face / model cache
+.cache/
+huggingface/
+ChatbotAI/.cache/

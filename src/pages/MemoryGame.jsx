@@ -1,147 +1,209 @@
 // pages/MemoryGame.jsx
-import { useState, useEffect } from 'react';
-import { cardPairs } from '../utils/cardPairs';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import {
-  Container,
-  Typography,
-  Grid,
-  Paper,
-  Box,
-  Button,
-} from '@mui/material';
+  Container, Row, Col, Card, Button, Alert, Badge
+} from 'react-bootstrap';
+import { BsClockHistory, BsPatchQuestionFill } from 'react-icons/bs';
+import { cardPairs } from '../utils/cardPairs'; // 카드 데이터 파일
+import { findChildById, updateChild } from '../utils/localData';
 
-function shuffleCards(cards) {
-  return [...cards].sort(() => Math.random() - 0.5);
+function shuffle(array) {
+  return [...array].sort(() => Math.random() - 0.5);
 }
 
 function MemoryGame() {
-  const [cards, setCards] = useState([]);
-  const [flipped, setFlipped] = useState([]);
-  const [matched, setMatched] = useState([]);
-  const [score, setScore] = useState(0);
+  const user = JSON.parse(sessionStorage.getItem('user'));
+  const navigate = useNavigate();
+  const [cards, setCards] = useState([]);       // 카드 데이터
+  const [flippedCards, setFlippedCards] = useState([]);  // 뒤집어진 카드들
+  const [matchedPairs, setMatchedPairs] = useState([]);   // 매칭된 카드 쌍
+  const [gameStarted, setGameStarted] = useState(false);  // 게임 시작 여부
+  const [time, setTime] = useState(0);            // 경과 시간
+  const timerRef = useRef(null);
+  const [showInfo, setShowInfo] = useState(true); // 게임 정보 표시 여부
+  const [rewarded, setRewarded] = useState(false); // 포인트 지급 여부
+  const [reward, setReward] = useState(0); // 지급 포인트
 
-  const [showAll, setShowAll] = useState(true);
-  const [gameStarted, setGameStarted] = useState(false);
-
-  // 초기 카드 셔플 + 암기 시간
   useEffect(() => {
-    const shuffled = shuffleCards(cardPairs);
-    setCards(shuffled);
-    setShowAll(true);
+    const shuffled = shuffle(cardPairs).slice(0, 8);  // 카드 데이터 8개 랜덤 추출 (단어와 뜻 각각 다르게)
+
+    // 8개의 단어 카드와 8개의 뜻 카드를 만들기
+    const words = shuffled.map((c, i) => ({
+      ...c,
+      id: `word-${i}`,
+      flipped: false,  // 카드 뒤집힘 상태
+      matched: false,  // 카드 매칭 여부
+      type: 'word',     // 단어 카드
+      pairId: `pair-${i}`  // 고유한 pairId 부여
+    }));
+
+    const definitions = shuffled.map((c, i) => ({
+      ...c,
+      id: `def-${i}`,
+      flipped: false,  // 카드 뒤집힘 상태
+      matched: false,  // 카드 매칭 여부
+      type: 'definition',  // 뜻 카드
+      pairId: `pair-${i}`  // 고유한 pairId 부여 (단어 카드와 동일한 pairId)
+    }));
+
+    // 단어 카드와 뜻 카드를 합쳐서 하나의 배열로 만듦
+    const finalCards = [...words, ...definitions];
+
+    setCards(shuffle(finalCards));  // 카드 배열 랜덤 섞기
+    setMatchedPairs([]);
+    setFlippedCards([]);
     setGameStarted(false);
+    setTime(0);
+    setRewarded(false);
+    setReward(0);
 
-    const timer = setTimeout(() => {
-      setShowAll(false);
+    // 3초 후에 게임 시작
+    const memoryTimeout = setTimeout(() => {
       setGameStarted(true);
-    }, 3000); // 3초 보여주기
+      setShowInfo(false);
+      startTimer();
+    }, 3000);
 
-    return () => clearTimeout(timer);
+    return () => clearTimeout(memoryTimeout);
   }, []);
 
+  const startTimer = () => {
+    timerRef.current = setInterval(() => {
+      setTime((prev) => prev + 1);
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    clearInterval(timerRef.current);
+  };
+
   const handleFlip = (card) => {
-    if (!gameStarted || flipped.length === 2 || flipped.includes(card.id) || matched.includes(card.id)) return;
+    if (!gameStarted || card.flipped || matchedPairs.includes(card.pairId)) return;
 
-    const newFlipped = [...flipped, card.id];
-    setFlipped(newFlipped);
+    // 카드 뒤집기
+    setFlippedCards((prev) => [...prev, card]);
 
-    if (newFlipped.length === 2) {
-      const [firstId, secondId] = newFlipped;
-      const firstCard = cards.find((c) => c.id === firstId);
-      const secondCard = cards.find((c) => c.id === secondId);
+    const updatedCards = cards.map((c) =>
+      c.id === card.id ? { ...c, flipped: true } : c
+    );
+    setCards(updatedCards);
 
-      if (firstCard.pairId === secondCard.pairId) {
-        setMatched((prev) => [...prev, firstId, secondId]);
-        setScore((prev) => prev + 10);
+    if (flippedCards.length === 1) {
+      const [firstCard] = flippedCards;
+
+      // 두 카드가 매칭되는지 확인
+      if (firstCard.pairId === card.pairId) {
+        setMatchedPairs((prev) => [...prev, firstCard.pairId]);
+        setFlippedCards([]);
+      } else {
+        setTimeout(() => {
+          const resetCards = cards.map((c) =>
+            c.id === firstCard.id || c.id === card.id
+              ? { ...c, flipped: false }
+              : c
+          );
+          setCards(resetCards);
+          setFlippedCards([]);
+        }, 1000);
       }
-
-      setTimeout(() => {
-        setFlipped([]);
-      }, 800);
     }
   };
 
-  const isFlipped = (id) => showAll || flipped.includes(id) || matched.includes(id);
+  useEffect(() => {
+    if (matchedPairs.length === 8 && !rewarded) {
+      stopTimer();
+      // 포인트 지급: 8페어 기준, 시간에 따라 차등 지급(예: 60초 이내 100점, 120초 이내 70점, 그 외 50점)
+      let point = 50;
+      if (time <= 60) point = 100;
+      else if (time <= 120) point = 70;
+      setReward(point);
+      if (user?.role === 'child') {
+        const child = findChildById(user.id);
+        if (child) {
+          const updated = { ...child };
+          updated.points = (updated.points || 0) + point;
+          // 메모리 게임 결과 저장
+          updated.memoryGameResults = [
+            ...(updated.memoryGameResults || []),
+            {
+              id: Date.now(),
+              date: new Date().toISOString().slice(0, 10),
+              points: point,
+              time: time,
+              pairs: matchedPairs.length
+            }
+          ];
+          updateChild(updated);
+        }
+      }
+      setRewarded(true);
+    }
+  }, [matchedPairs, rewarded, time, user]);
 
   const handleRestart = () => {
-    const reshuffled = shuffleCards(cardPairs);
-    setCards(reshuffled);
-    setFlipped([]);
-    setMatched([]);
-    setScore(0);
-    setShowAll(true);
-    setGameStarted(false);
-
-    setTimeout(() => {
-      setShowAll(false);
-      setGameStarted(true);
-    }, 3000);
+    window.location.reload();
   };
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        🧩 금융 상식 카드 매칭 게임
-      </Typography>
-      <Typography variant="subtitle1" sx={{ mb: 3 }}>
-        점수: {score}점 | 남은 페어: {(cards.length - matched.length) / 2}
-      </Typography>
+    <Container fluid style={{ backgroundColor: '#fffbe9', minHeight: '100vh', paddingTop: '96px' }}>
+      <div className="mx-auto" style={{ maxWidth: 700 }}>
+        <h2 className="fw-bold mb-4 text-center" style={{ color: '#3C1E1E' }}>🧠 금융 카드 매칭 게임</h2>
 
-      <Grid container spacing={2}>
-        {cards.map((card) => (
-          <Grid item xs={4} sm={3} key={card.id}>
-           <Paper
-  onClick={() => handleFlip(card)}
-  sx={{
-    p: 2,
-    height: 100,
-    textAlign: 'center',
-    borderRadius: 2,
-    backgroundColor: isFlipped(card.id)
-      ? card.type === 'concept'
-        ? '#e3f2fd' // 연한 파랑
-        : '#f0f0f0' // 연한 회색
-      : '#ddd',
-    cursor: isFlipped(card.id) ? 'default' : 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'background 0.3s',
-    fontWeight: isFlipped(card.id)
-      ? card.type === 'concept'
-        ? 700
-        : 400
-      : 300,
-  }}
-  elevation={isFlipped(card.id) ? 3 : 1}
->
-  <Typography
-    variant={card.type === 'concept' ? 'body1' : 'body2'}
-    align="center"
-  >
-    {isFlipped(card.id) ? card.text : '❓'}
-  </Typography>
-</Paper>
+        {showInfo && (
+          <Alert variant="warning" className="text-center fw-semibold">
+            🧠 3초 동안 카드를 암기하세요!<br />같은 카드를 매칭해보세요.
+          </Alert>
+        )}
 
-          </Grid>
-        ))}
-      </Grid>
+        {!showInfo && (
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h6 className="mb-0 text-dark">
+              <BsClockHistory className="me-2" />경과 시간: <Badge bg="warning" text="dark">{time}초</Badge>
+            </h6>
+            <span className="text-muted">남은 페어: {8 - matchedPairs.length}</span>
+          </div>
+        )}
 
-      {/* 게임 완료 메시지 */}
-      {matched.length === cards.length && (
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Typography variant="h5" gutterBottom>
-            🎉 게임 완료! 최종 점수: {score}점
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleRestart}
-            sx={{ mt: 2 }}
-          >
-            다시 하기
-          </Button>
-        </Box>
-      )}
+        <Row className="g-3">
+          {cards.map((card) => (
+            <Col xs={3} key={card.id}>
+              <Card
+                className={`text-center ${card.flipped || matchedPairs.includes(card.pairId) ? 'bg-success text-white' : 'bg-light'}`}
+                style={{ cursor: 'pointer', height: 100, borderRadius: 16, boxShadow: '0 2px 8px #F5F5F5', fontWeight: 600, fontSize: '1.1rem' }}
+                onClick={() => handleFlip(card)}
+              >
+                <Card.Body className="d-flex align-items-center justify-content-center p-2">
+                  <Card.Text className="mb-0 fw-semibold" style={{ fontSize: '1rem' }}>
+                    {card.flipped || matchedPairs.includes(card.pairId) ? card.text : <BsPatchQuestionFill />}
+                  </Card.Text>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+
+        {matchedPairs.length === 8 && (
+          <div className="text-center mt-5">
+            <h5 className="fw-bold text-success mb-3">🎉 축하합니다!</h5>
+            <p>전체 매칭 완료! <Badge bg="info">{time}초</Badge></p>
+            {rewarded && (
+              <Alert variant="success" className="fw-semibold">{reward} 포인트가 지급되었습니다!</Alert>
+            )}
+            <Button variant="warning" onClick={handleRestart} className="rounded-pill px-4 fw-bold text-dark">
+              🔁 다시 하기
+            </Button>
+            <Button
+              variant="dark"
+              onClick={() => navigate(user?.role === 'parent' ? '/parent' : '/child')}
+              className="rounded-pill px-4 fw-bold ms-2"
+            >
+              메인으로
+            </Button>
+          </div>
+        )}
+      </div>
     </Container>
   );
 }
